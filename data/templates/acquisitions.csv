@@ -1,0 +1,1 @@
+embryo_id,group,strain,reporter,batch_id,mount_id,operator,temperature_c,start_stage,objective,objective_na,immersion,excitation_nm,power_at_sample_mw,laser_power_percent,nsparc_mode,nis_elements_version,xy_um_per_px,z_um_per_plane,z_planes,planned_interval_s,measured_interval_s,recorded_volumes,raw_data_uri,raw_sha256,notes

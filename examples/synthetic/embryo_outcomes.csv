@@ -1,0 +1,4 @@
+embryo_id,hatched,hatch_t_min,abnormal_development,excluded,exclusion_reason,notes
+SYN01,1,720,0,0,,FABRICATED DEMO ONLY
+SYN02,0,,1,0,,FABRICATED DEMO ONLY
+SYN03,,,0,0,,FABRICATED DEMO ONLY

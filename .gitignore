@@ -1,0 +1,25 @@
+# Large and/or sensitive microscopy data
+*.nd2
+*.lif
+*.czi
+*.ome.tif
+*.ome.tiff
+*.tif
+*.tiff
+*.h5
+*.hdf5
+*.zarr/
+data/raw/
+data/processed/
+results/
+
+# Environment/build
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.DS_Store
+.env
+.env.*
