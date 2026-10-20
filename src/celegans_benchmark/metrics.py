@@ -30,6 +30,8 @@ TABLES: dict[str, set[str]] = {
 GROUPS = ("NSPARC_60s", "NSPARC_180s", "CONTROL")
 # Easy to forget on imaging day and unrecoverable later: warn (never error) when blank.
 RECOMMENDED_ACQUISITION_FIELDS = ("power_at_sample_mw", "raw_sha256", "nsparc_mode")
+# Provisional: how far measured_interval_s may exceed planned_interval_s before warning (5%).
+DEFAULT_INTERVAL_TOLERANCE = 0.05
 STAGES = ("<16", "16-49", "50-99", "100-199", "200+")
 DEPTH_REGIONS = ("all", "near", "far")
 
@@ -141,7 +143,28 @@ def acquisition_warnings(acquisitions: list[dict[str, str]]) -> list[str]:
     return found
 
 
-def load_data(data_dir: str | Path) -> Dataset:
+def interval_warnings(acquisitions: list[dict[str, str]], tolerance: float) -> list[str]:
+    """Warn when the achieved interval is slower than planned by more than `tolerance`.
+
+    Blank intervals are unknown, never flagged; CONTROL rows and faster-than-planned
+    intervals are not flagged either.
+    """
+    if not (math.isfinite(tolerance) and tolerance >= 0):
+        raise DataError(f"interval_tolerance must be a finite number >= 0, got {tolerance!r}")
+    found = []
+    for r in acquisitions:
+        if r["group"] == "CONTROL" or not r["planned_interval_s"] or not r["measured_interval_s"]:
+            continue
+        planned, measured = float(r["planned_interval_s"]), float(r["measured_interval_s"])
+        if measured - planned > tolerance * planned + 1e-9:  # epsilon: exactly at the limit is OK
+            found.append(f"{r['embryo_id']}: measured interval {r['measured_interval_s']} s exceeds "
+                         f"planned {r['planned_interval_s']} s by {(measured / planned - 1):.1%} "
+                         f"(tolerance {tolerance * 100:.4g}%)")
+    return found
+
+
+def load_data(data_dir: str | Path,
+              interval_tolerance: float = DEFAULT_INTERVAL_TOLERANCE) -> Dataset:
     root = Path(data_dir)
     loaded = {stem: _read(root / f"{stem}.csv", required) for stem, required in TABLES.items()}
     ds = Dataset(acquisitions=loaded["acquisitions"], outcomes=loaded["embryo_outcomes"],
@@ -242,7 +265,8 @@ def load_data(data_dir: str | Path) -> Dataset:
         if not r["milestone"]:
             raise DataError(f"{r['embryo_id']}: milestone name cannot be blank")
         _number(r["t_min"], f"{r['embryo_id']}.milestone.t_min")
-    ds.warnings = acquisition_warnings(ds.acquisitions)
+    ds.warnings = (acquisition_warnings(ds.acquisitions)
+                   + interval_warnings(ds.acquisitions, interval_tolerance))
     return ds
 
 

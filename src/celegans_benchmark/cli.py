@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from .metrics import DataError, Gates, load_data, plot_audited_timeline, summarize, write_reports
+from .metrics import DEFAULT_INTERVAL_TOLERANCE, DataError, Gates, load_data, plot_audited_timeline, summarize, write_reports
 from .checksum import sha256_file, verify_raw
 from .runfolder import init_run
 
@@ -17,9 +17,15 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     validate = sub.add_parser("validate", help="Check CSV schemas, values, and embryo references")
     validate.add_argument("--data-dir", required=True, help="Folder containing five run CSVs")
+    validate.add_argument("--interval-tolerance", type=float, default=DEFAULT_INTERVAL_TOLERANCE,
+                     help="Warn if measured_interval_s exceeds planned_interval_s by more than this "
+                          "fraction (default 0.05 = 5%%)")
     report = sub.add_parser("report", help="Create CSV/JSON descriptive tables")
     report.add_argument("--data-dir", required=True)
     report.add_argument("--output-dir", required=True)
+    report.add_argument("--interval-tolerance", type=float, default=DEFAULT_INTERVAL_TOLERANCE,
+                     help="Warn if measured_interval_s exceeds planned_interval_s by more than this "
+                          "fraction (default 0.05 = 5%%)")
     report.add_argument("--recall-threshold", type=float, default=Gates.recall_min,
                         help="Provisional detection-recall target (default 0.95)")
     report.add_argument("--lineage-threshold", type=float, default=Gates.lineage_min,
@@ -52,7 +58,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"Wrote {path}")
             print("Created empty protocol CSVs. Keep this folder outside public Git.")
             return 0
-        data = load_data(args.data_dir)
+        data = load_data(args.data_dir, args.interval_tolerance)
         for warning in data.warnings:
             print(f"WARNING: {warning}", file=sys.stderr)
         print(f"Validated {len(data.acquisitions)} registered embryos, "
