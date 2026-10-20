@@ -43,7 +43,7 @@ The study ends with an answer to: *How far into embryogenesis can NSPARC recover
 ## Get started
 
 1. Review the scientific protocol with the *C. elegans* lab manager; verify the available nuclear reporter strain and instrument capabilities.
-2. Copy all `data/templates/*.csv` into a private run folder, then fill in real acquisition and QC records. **Do not add identifying or unpublished image data to a public Git repository.**
+2. Copy all `data/templates/*.csv` into a private run folder (or run `python -m celegans_benchmark init-run --run-dir <folder>`, which never overwrites existing CSVs), then fill in real acquisition and QC records. **Do not add identifying or unpublished image data to a public Git repository.**
 3. Export/manual-curate nuclei into the documented CSV format. Raw Nikon `.nd2` images stay in controlled storage (not Git).
 4. Run the analysis:
 
@@ -55,6 +55,23 @@ python -m unittest discover -s tests -v
 ```
 
 The `examples/synthetic` directory is **fabricated demo data only**, clearly labeled; no published biological measurements are inferred from it. Optional figure output uses Matplotlib: `pip install -e '.[plots]'`, then append `--plot` to `report`.
+
+### Other commands
+
+```bash
+# Create an empty run folder from the templates (refuses if it already contains CSVs)
+python -m celegans_benchmark init-run --run-dir D:\private\run1
+
+# SHA-256 of a large raw file (read in chunks); paste it into raw_sha256 in acquisitions.csv
+python -m celegans_benchmark checksum --file D:\raw\embryo01.nd2
+
+# Compare recorded checksums with the files (blank values are "not recorded", not failures)
+python -m celegans_benchmark verify-raw --data-dir D:\private\run1 --raw-root D:\raw
+```
+
+`validate` and `report` print `WARNING` lines (exit code unchanged) when an imaged embryo has a blank `power_at_sample_mw`, `raw_sha256` or `nsparc_mode`, or when `measured_interval_s` is slower than `planned_interval_s` by more than `--interval-tolerance` (default 0.05 = 5%).
+
+`report` also writes stage-resolved lineage accuracy (`lineage_stage_qc.csv`), near/far depth QC (`depth_qc.csv`) and the provisional feasibility gates (`feasibility_gates.csv`, `feasibility_gates_by_embryo.csv`). Gate status is `pass`, `fail` or `not_evaluable` (no data is never a failure). The provisional targets can be changed with `--recall-threshold` (0.95), `--lineage-threshold` (0.90) and `--recall-through-cells` (100).
 
 ## Success measures
 
