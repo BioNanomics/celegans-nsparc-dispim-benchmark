@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import sys
 from .metrics import DataError, load_data, plot_audited_timeline, summarize, write_reports
+from .runfolder import init_run
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -19,8 +20,16 @@ def main(argv: list[str] | None = None) -> int:
     report.add_argument("--data-dir", required=True)
     report.add_argument("--output-dir", required=True)
     report.add_argument("--plot", action="store_true", help="Plot manually audited cell counts (Matplotlib optional)")
+    init = sub.add_parser("init-run", help="Create a run folder with empty template CSVs (never overwrites)")
+    init.add_argument("--run-dir", required=True, help="Private folder to create/fill (keep outside public Git)")
+    init.add_argument("--templates-dir", help="Template CSV folder (default: data/templates in the repo)")
     args = parser.parse_args(argv)
     try:
+        if args.command == "init-run":
+            for path in init_run(args.run_dir, args.templates_dir):
+                print(f"Wrote {path}")
+            print("Created empty protocol CSVs. Keep this folder outside public Git.")
+            return 0
         data = load_data(args.data_dir)
         print(f"Validated {len(data.acquisitions)} registered embryos, "
               f"{len(data.nuclei)} nuclei-QC rows, {len(data.lineage)} lineage-QC rows.")
