@@ -10,7 +10,7 @@ import csv
 import json
 import math
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from statistics import mean, stdev
 from typing import Any
@@ -28,6 +28,8 @@ TABLES: dict[str, set[str]] = {
     "milestones": {"embryo_id", "milestone", "t_min"},
 }
 GROUPS = ("NSPARC_60s", "NSPARC_180s", "CONTROL")
+# Easy to forget on imaging day and unrecoverable later: warn (never error) when blank.
+RECOMMENDED_ACQUISITION_FIELDS = ("power_at_sample_mw", "raw_sha256", "nsparc_mode")
 STAGES = ("<16", "16-49", "50-99", "100-199", "200+")
 
 
@@ -58,6 +60,7 @@ class Dataset:
     nuclei: list[dict[str, str]]
     lineage: list[dict[str, str]]
     milestones: list[dict[str, str]]
+    warnings: list[str] = field(default_factory=list)
 
     @property
     def embryos(self) -> dict[str, dict[str, str]]:
@@ -123,6 +126,18 @@ def _unique(rows: list[dict[str, str]], name: str, *fields: str) -> None:
         if key in seen:
             raise DataError(f"{name}: duplicate {fields}: {key}")
         seen.add(key)
+
+
+def acquisition_warnings(acquisitions: list[dict[str, str]]) -> list[str]:
+    """One warning per imaged embryo with blank recommended fields; CONTROL rows are skipped."""
+    found = []
+    for r in acquisitions:
+        if r["group"] == "CONTROL":
+            continue
+        blank = [f for f in RECOMMENDED_ACQUISITION_FIELDS if not r.get(f, "")]
+        if blank:
+            found.append(f"{r['embryo_id']}: blank {', '.join(blank)}")
+    return found
 
 
 def load_data(data_dir: str | Path) -> Dataset:
@@ -211,6 +226,7 @@ def load_data(data_dir: str | Path) -> Dataset:
         if not r["milestone"]:
             raise DataError(f"{r['embryo_id']}: milestone name cannot be blank")
         _number(r["t_min"], f"{r['embryo_id']}.milestone.t_min")
+    ds.warnings = acquisition_warnings(ds.acquisitions)
     return ds
 
 

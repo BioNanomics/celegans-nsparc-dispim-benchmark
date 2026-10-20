@@ -53,6 +53,8 @@ def main(argv: list[str] | None = None) -> int:
             print("Created empty protocol CSVs. Keep this folder outside public Git.")
             return 0
         data = load_data(args.data_dir)
+        for warning in data.warnings:
+            print(f"WARNING: {warning}", file=sys.stderr)
         print(f"Validated {len(data.acquisitions)} registered embryos, "
               f"{len(data.nuclei)} nuclei-QC rows, {len(data.lineage)} lineage-QC rows.")
         if not data.acquisitions:
