@@ -35,6 +35,22 @@ class DataError(ValueError):
     """An invalid or internally inconsistent input dataset."""
 
 
+@dataclass(frozen=True)
+class Gates:
+    """Provisional internal feasibility targets (see docs/ANALYSIS_PLAN.md); all adjustable."""
+    recall_min: float = 0.95
+    lineage_min: float = 0.90
+    recall_through_cells: int = 100  # audited frames with <= this many cells count
+
+    def __post_init__(self) -> None:
+        for name in ("recall_min", "lineage_min"):
+            value = getattr(self, name)
+            if not (math.isfinite(value) and 0 <= value <= 1):
+                raise DataError(f"{name} must be between 0 and 1, got {value!r}")
+        if self.recall_through_cells < 0:
+            raise DataError("recall_through_cells cannot be negative")
+
+
 @dataclass
 class Dataset:
     acquisitions: list[dict[str, str]]
@@ -212,7 +228,27 @@ def _rates(tp: int, fp: int, fn: int) -> dict[str, float | None]:
             "f1": frac(2 * tp, 2 * tp + fp + fn)}
 
 
-def summarize(ds: Dataset) -> dict[str, list[dict[str, Any]]]:
+def _gate_counts(qc: list[dict[str, str]], links: list[dict[str, str]],
+                 gates: Gates) -> dict[str, tuple[int, int, float]]:
+    """(numerator, denominator, threshold) per gate for one set of audited rows."""
+    frames = [r for r in qc if int(r["manual_cell_count"]) <= gates.recall_through_cells]
+    return {
+        "detection_recall": (sum(int(r["tp"]) for r in frames),
+                             sum(int(r["tp"]) + int(r["fn"]) for r in frames), gates.recall_min),
+        "lineage_correct": (sum(int(r["correct"]) for r in links), len(links), gates.lineage_min),
+    }
+
+
+def _gate_row(num: int, den: int, threshold: float) -> dict[str, Any]:
+    """Pass/fail needs a denominator; with none the gate is not evaluable, never a fail."""
+    value = num / den if den else None
+    status = "not_evaluable" if value is None else ("pass" if value >= threshold else "fail")
+    return {"threshold": threshold, "numerator": num, "denominator": den,
+            "value": value, "status": status}
+
+
+def summarize(ds: Dataset, gates: Gates | None = None) -> dict[str, list[dict[str, Any]]]:
+    gates = gates or Gates()
     outcomes = {r["embryo_id"]: r for r in ds.outcomes}
     active = {r["embryo_id"]: r for r in ds.acquisitions
               if outcomes.get(r["embryo_id"], {}).get("excluded") != "1"}
@@ -313,8 +349,26 @@ def summarize(ds: Dataset) -> dict[str, list[dict[str, Any]]]:
                    "mean_t_min": mean(times), "sd_t_min": stdev(times) if len(times) > 1 else None}
                   for (group, label), times in sorted(milestone_groups.items())]
 
+    embryo_gates = {eid: _gate_counts(by_emb_nuc[eid], by_emb_lin[eid], gates)
+                    for eid in sorted(active) if active[eid]["group"] != "CONTROL"}
+    gate_rows: list[dict[str, Any]] = []
+    for group in GROUPS:
+        if group == "CONTROL":  # never fluorescence-imaged: gates do not apply
+            continue
+        members = [counts for eid, counts in embryo_gates.items() if active[eid]["group"] == group]
+        for gate in ("detection_recall", "lineage_correct"):
+            threshold = gates.recall_min if gate == "detection_recall" else gates.lineage_min
+            num = sum(m[gate][0] for m in members)
+            den = sum(m[gate][1] for m in members)
+            gate_rows.append({"group": group, "gate": gate, **_gate_row(num, den, threshold),
+                              "n_embryos": sum(1 for m in members if m[gate][1])})
+    gate_embryo_rows = [
+        {"embryo_id": eid, "group": active[eid]["group"], "gate": gate, **_gate_row(*counts[gate])}
+        for eid, counts in embryo_gates.items() for gate in ("detection_recall", "lineage_correct")]
+
     return {"groups": by_group, "embryos": embryos, "stage_qc": stage_rows,
             "lineage_stage_qc": lineage_stage_rows,
+            "feasibility_gates": gate_rows, "feasibility_gates_by_embryo": gate_embryo_rows,
             "audited_timeline": sorted(timeline, key=lambda r: (r["embryo_id"], r["volume_index"])),
             "milestones": milestones}
 
@@ -341,7 +395,9 @@ def write_reports(report: dict[str, list[dict[str, Any]]], output_dir: str | Pat
         "If input is examples/synthetic, these numbers are FABRICATED for software testing.\n"
         "Rates pooled across audited volumes are technical descriptors; do not use them\n"
         "as independent biological replicates or interpret them as microscope equivalence.\n"
-        "An empty value means not measured or mathematically undefined, not zero.\n",
+        "An empty value means not measured or mathematically undefined, not zero.\n"
+        "Feasibility gate thresholds are provisional internal targets, not diSPIM standards;\n"
+        "'not_evaluable' means no data to judge, never a failure.\n",
         encoding="utf-8",
     )
     written.append(note)

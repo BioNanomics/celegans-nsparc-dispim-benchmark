@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from .metrics import DataError, load_data, plot_audited_timeline, summarize, write_reports
+from .metrics import DataError, Gates, load_data, plot_audited_timeline, summarize, write_reports
 from .checksum import sha256_file, verify_raw
 from .runfolder import init_run
 
@@ -20,6 +20,12 @@ def main(argv: list[str] | None = None) -> int:
     report = sub.add_parser("report", help="Create CSV/JSON descriptive tables")
     report.add_argument("--data-dir", required=True)
     report.add_argument("--output-dir", required=True)
+    report.add_argument("--recall-threshold", type=float, default=Gates.recall_min,
+                        help="Provisional detection-recall target (default 0.95)")
+    report.add_argument("--lineage-threshold", type=float, default=Gates.lineage_min,
+                        help="Provisional lineage-correct target (default 0.90)")
+    report.add_argument("--recall-through-cells", type=int, default=Gates.recall_through_cells,
+                        help="Audited frames with at most this many cells count for recall (default 100)")
     report.add_argument("--plot", action="store_true", help="Plot manually audited cell counts (Matplotlib optional)")
     init = sub.add_parser("init-run", help="Create a run folder with empty template CSVs (never overwrites)")
     init.add_argument("--run-dir", required=True, help="Private folder to create/fill (keep outside public Git)")
@@ -52,7 +58,8 @@ def main(argv: list[str] | None = None) -> int:
         if not data.acquisitions:
             print("No embryo rows found. Empty templates validated; no results to analyze.")
         if args.command == "report":
-            result = summarize(data)
+            result = summarize(data, Gates(args.recall_threshold, args.lineage_threshold,
+                                           args.recall_through_cells))
             paths = write_reports(result, args.output_dir)
             if args.plot:
                 figure = plot_audited_timeline(result, args.output_dir)
