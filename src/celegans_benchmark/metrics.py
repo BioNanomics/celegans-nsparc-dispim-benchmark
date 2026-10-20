@@ -28,6 +28,7 @@ TABLES: dict[str, set[str]] = {
     "milestones": {"embryo_id", "milestone", "t_min"},
 }
 GROUPS = ("NSPARC_60s", "NSPARC_180s", "CONTROL")
+STAGES = ("<16", "16-49", "50-99", "100-199", "200+")
 
 
 class DataError(ValueError):
@@ -198,15 +199,10 @@ def load_data(data_dir: str | Path) -> Dataset:
 
 
 def stage_of(nuclei: int) -> str:
-    if nuclei < 16:
-        return "<16"
-    if nuclei < 50:
-        return "16-49"
-    if nuclei < 100:
-        return "50-99"
-    if nuclei < 200:
-        return "100-199"
-    return "200+"
+    for stage, upper in zip(STAGES, (16, 50, 100, 200)):
+        if nuclei < upper:
+            return stage
+    return STAGES[-1]
 
 
 def _rates(tp: int, fp: int, fn: int) -> dict[str, float | None]:
@@ -294,7 +290,20 @@ def summarize(ds: Dataset) -> dict[str, list[dict[str, Any]]]:
                          "t_min": float(r["t_min"]), "manual_cell_count": int(r["manual_cell_count"])})
     stage_rows = [{"group": group, "stage": stage, **vals, **_rates(vals["tp"], vals["fp"], vals["fn"])}
                   for (group, stage), vals in sorted(stage_totals.items(),
-                      key=lambda x: (GROUPS.index(x[0][0]), ["<16", "16-49", "50-99", "100-199", "200+"].index(x[0][1])))]
+                      key=lambda x: (GROUPS.index(x[0][0]), STAGES.index(x[0][1])))]
+
+    lineage_totals: dict[tuple[str, str], dict[str, int]] = defaultdict(
+        lambda: {"verified_lineage_events": 0, "correct_lineage_events": 0})
+    for eid, links in by_emb_lin.items():
+        for r in links:
+            vals = lineage_totals[(active[eid]["group"], stage_of(int(r["stage_cell_count"])))]
+            vals["verified_lineage_events"] += 1
+            vals["correct_lineage_events"] += int(r["correct"])
+    lineage_stage_rows = [
+        {"group": group, "stage": stage, **vals,
+         "lineage_correct_fraction": vals["correct_lineage_events"] / vals["verified_lineage_events"]}
+        for (group, stage), vals in sorted(
+            lineage_totals.items(), key=lambda x: (GROUPS.index(x[0][0]), STAGES.index(x[0][1])))]
 
     milestone_groups: dict[tuple[str, str], list[float]] = defaultdict(list)
     for r in ds.milestones:
@@ -305,6 +314,7 @@ def summarize(ds: Dataset) -> dict[str, list[dict[str, Any]]]:
                   for (group, label), times in sorted(milestone_groups.items())]
 
     return {"groups": by_group, "embryos": embryos, "stage_qc": stage_rows,
+            "lineage_stage_qc": lineage_stage_rows,
             "audited_timeline": sorted(timeline, key=lambda r: (r["embryo_id"], r["volume_index"])),
             "milestones": milestones}
 
