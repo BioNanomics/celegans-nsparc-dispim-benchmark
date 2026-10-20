@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import sys
 from .metrics import DataError, load_data, plot_audited_timeline, summarize, write_reports
+from .checksum import sha256_file, verify_raw
 from .runfolder import init_run
 
 
@@ -23,8 +24,23 @@ def main(argv: list[str] | None = None) -> int:
     init = sub.add_parser("init-run", help="Create a run folder with empty template CSVs (never overwrites)")
     init.add_argument("--run-dir", required=True, help="Private folder to create/fill (keep outside public Git)")
     init.add_argument("--templates-dir", help="Template CSV folder (default: data/templates in the repo)")
+    checksum = sub.add_parser("checksum", help="Print the SHA-256 of a (large) file")
+    checksum.add_argument("--file", required=True)
+    verify = sub.add_parser("verify-raw", help="Check raw_sha256 in acquisitions.csv against the files")
+    verify.add_argument("--data-dir", required=True)
+    verify.add_argument("--raw-root", help="Folder for relative raw_data_uri values")
     args = parser.parse_args(argv)
     try:
+        if args.command == "checksum":
+            print(f"{sha256_file(args.file)}  {args.file}")
+            return 0
+        if args.command == "verify-raw":
+            results = verify_raw(args.data_dir, args.raw_root)
+            for r in results:
+                print(f"{r['embryo_id']}: {r['status']}")
+            if not results:
+                print("No embryo rows found; nothing to verify.")
+            return 1 if any(r["status"] in ("mismatch", "missing") for r in results) else 0
         if args.command == "init-run":
             for path in init_run(args.run_dir, args.templates_dir):
                 print(f"Wrote {path}")
