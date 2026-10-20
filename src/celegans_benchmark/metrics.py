@@ -31,6 +31,7 @@ GROUPS = ("NSPARC_60s", "NSPARC_180s", "CONTROL")
 # Easy to forget on imaging day and unrecoverable later: warn (never error) when blank.
 RECOMMENDED_ACQUISITION_FIELDS = ("power_at_sample_mw", "raw_sha256", "nsparc_mode")
 STAGES = ("<16", "16-49", "50-99", "100-199", "200+")
+DEPTH_REGIONS = ("all", "near", "far")
 
 
 class DataError(ValueError):
@@ -148,7 +149,7 @@ def load_data(data_dir: str | Path) -> Dataset:
                  milestones=loaded["milestones"])
     _unique(ds.acquisitions, "acquisitions", "embryo_id")
     _unique(ds.outcomes, "embryo_outcomes", "embryo_id")
-    _unique(ds.nuclei, "nuclei_qc", "embryo_id", "volume_index")
+    _unique(ds.nuclei, "nuclei_qc", "embryo_id", "volume_index", "depth_region")
     _unique(ds.lineage, "lineage_qc", "embryo_id", "event_id")
     _unique(ds.milestones, "milestones", "embryo_id", "milestone")
     known = ds.embryos
@@ -202,11 +203,26 @@ def load_data(data_dir: str | Path) -> Dataset:
                       for field in ("tp", "fp", "fn"))
         if manual != tp + fn:
             raise DataError(f"{eid} volume {idx}: manual_cell_count must equal tp+fn")
-        if r["depth_region"] != "all":
-            raise DataError(f"{eid} volume {idx}: this starter tool accepts depth_region='all' only")
+        if r["depth_region"] not in DEPTH_REGIONS:
+            raise DataError(f"{eid} volume {idx}: depth_region must be one of "
+                            f"{', '.join(DEPTH_REGIONS)}, got {r['depth_region']!r}")
         vols = known[eid]["recorded_volumes"]
         if vols and idx >= int(vols):
             raise DataError(f"{eid}: QC volume_index {idx} >= recorded_volumes {vols}")
+
+    # A frame is audited either as one 'all' row or as a near+far partition, never both,
+    # otherwise its nuclei would be counted twice.
+    frame_rows: dict[tuple[str, str], list[dict[str, str]]] = defaultdict(list)
+    for r in ds.nuclei:
+        frame_rows[(r["embryo_id"], r["volume_index"])].append(r)
+    for (eid, vol), rows in frame_rows.items():
+        regions = {r["depth_region"] for r in rows}
+        if "all" in regions and len(regions) > 1:
+            raise DataError(f"{eid} volume {vol}: cannot have both 'all' and near/far rows")
+        if regions not in ({"all"}, {"near", "far"}):
+            raise DataError(f"{eid} volume {vol}: near and far rows must be given together")
+        if len({float(r["t_min"]) for r in rows}) > 1:
+            raise DataError(f"{eid} volume {vol}: rows of one frame must share the same t_min")
 
     for r in ds.lineage:
         eid = r["embryo_id"]
@@ -244,6 +260,21 @@ def _rates(tp: int, fp: int, fn: int) -> dict[str, float | None]:
             "f1": frac(2 * tp, 2 * tp + fp + fn)}
 
 
+def _frames(rows: list[dict[str, str]]) -> list[dict[str, Any]]:
+    """Collapse region rows into one record per audited frame.
+
+    Counts are summed over the frame's rows (near+far partition the frame), so the stage
+    is binned by the frame's TOTAL count and each frame is counted once.
+    """
+    grouped: dict[tuple[str, int], list[dict[str, str]]] = defaultdict(list)
+    for r in rows:
+        grouped[(r["embryo_id"], int(r["volume_index"]))].append(r)
+    return [{"embryo_id": eid, "volume_index": vol, "t_min": parts[0]["t_min"],
+             "manual_cell_count": sum(int(r["manual_cell_count"]) for r in parts),
+             **{f: sum(int(r[f]) for r in parts) for f in ("tp", "fp", "fn")}}
+            for (eid, vol), parts in sorted(grouped.items())]
+
+
 def _gate_counts(qc: list[dict[str, str]], links: list[dict[str, str]],
                  gates: Gates) -> dict[str, tuple[int, int, float]]:
     """(numerator, denominator, threshold) per gate for one set of audited rows."""
@@ -268,11 +299,11 @@ def summarize(ds: Dataset, gates: Gates | None = None) -> dict[str, list[dict[st
     outcomes = {r["embryo_id"]: r for r in ds.outcomes}
     active = {r["embryo_id"]: r for r in ds.acquisitions
               if outcomes.get(r["embryo_id"], {}).get("excluded") != "1"}
-    by_emb_nuc: dict[str, list[dict[str, str]]] = defaultdict(list)
+    by_emb_nuc: dict[str, list[dict[str, Any]]] = defaultdict(list)
     by_emb_lin: dict[str, list[dict[str, str]]] = defaultdict(list)
-    for r in ds.nuclei:
-        if r["embryo_id"] in active:
-            by_emb_nuc[r["embryo_id"]].append(r)
+    frames = _frames([r for r in ds.nuclei if r["embryo_id"] in active])
+    for frame in frames:
+        by_emb_nuc[frame["embryo_id"]].append(frame)
     for r in ds.lineage:
         if r["embryo_id"] in active and r["verified"] == "1":
             by_emb_lin[r["embryo_id"]].append(r)
@@ -328,10 +359,8 @@ def summarize(ds: Dataset, gates: Gates | None = None) -> dict[str, list[dict[st
     stage_totals: dict[tuple[str, str], dict[str, int]] = defaultdict(
         lambda: {"audited_volumes": 0, "tp": 0, "fp": 0, "fn": 0})
     timeline = []
-    for r in ds.nuclei:
+    for r in frames:
         eid = r["embryo_id"]
-        if eid not in active:
-            continue
         group = active[eid]["group"]
         stage = stage_of(int(r["manual_cell_count"]))
         vals = stage_totals[(group, stage)]
@@ -343,6 +372,23 @@ def summarize(ds: Dataset, gates: Gates | None = None) -> dict[str, list[dict[st
     stage_rows = [{"group": group, "stage": stage, **vals, **_rates(vals["tp"], vals["fp"], vals["fn"])}
                   for (group, stage), vals in sorted(stage_totals.items(),
                       key=lambda x: (GROUPS.index(x[0][0]), STAGES.index(x[0][1])))]
+
+    frame_total = {(f["embryo_id"], f["volume_index"]): f["manual_cell_count"] for f in frames}
+    depth_totals: dict[tuple[str, str, str], dict[str, int]] = defaultdict(
+        lambda: {"audited_volumes": 0, "tp": 0, "fp": 0, "fn": 0})
+    for r in ds.nuclei:
+        if r["embryo_id"] not in active:
+            continue
+        stage = stage_of(frame_total[(r["embryo_id"], int(r["volume_index"]))])
+        vals = depth_totals[(active[r["embryo_id"]]["group"], r["depth_region"], stage)]
+        vals["audited_volumes"] += 1
+        for field in ("tp", "fp", "fn"):
+            vals[field] += int(r[field])
+    depth_rows = [{"group": group, "depth_region": region, "stage": stage, **vals,
+                   **_rates(vals["tp"], vals["fp"], vals["fn"])}
+                  for (group, region, stage), vals in sorted(
+                      depth_totals.items(), key=lambda x: (GROUPS.index(x[0][0]),
+                      DEPTH_REGIONS.index(x[0][1]), STAGES.index(x[0][2])))]
 
     lineage_totals: dict[tuple[str, str], dict[str, int]] = defaultdict(
         lambda: {"verified_lineage_events": 0, "correct_lineage_events": 0})
@@ -383,7 +429,7 @@ def summarize(ds: Dataset, gates: Gates | None = None) -> dict[str, list[dict[st
         for eid, counts in embryo_gates.items() for gate in ("detection_recall", "lineage_correct")]
 
     return {"groups": by_group, "embryos": embryos, "stage_qc": stage_rows,
-            "lineage_stage_qc": lineage_stage_rows,
+            "lineage_stage_qc": lineage_stage_rows, "depth_qc": depth_rows,
             "feasibility_gates": gate_rows, "feasibility_gates_by_embryo": gate_embryo_rows,
             "audited_timeline": sorted(timeline, key=lambda r: (r["embryo_id"], r["volume_index"])),
             "milestones": milestones}
