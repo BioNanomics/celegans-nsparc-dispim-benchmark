@@ -9,6 +9,7 @@ from . import __version__
 from .checksum import sha256_file, verify_raw
 from .provenance import build_run_info, write_run_info
 from .runfolder import init_run
+from .summary import auto_label, render_summary, write_summary
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -35,6 +36,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="Provisional lineage-correct target (default 0.90)")
     report.add_argument("--recall-through-cells", type=int, default=Gates.recall_through_cells,
                         help="Audited frames with at most this many cells count for recall (default 100)")
+    report.add_argument("--label", help="Banner for summary.md, e.g. 'PRACTICE DATA' "
+                                        "(example data in a 'synthetic' folder is labeled FABRICATED automatically)")
     report.add_argument("--plot", action="store_true", help="Plot manually audited cell counts (Matplotlib optional)")
     init = sub.add_parser("init-run", help="Create a run folder with empty template CSVs (never overwrites)")
     init.add_argument("--run-dir", required=True, help="Private folder to create/fill (keep outside public Git)")
@@ -74,6 +77,10 @@ def main(argv: list[str] | None = None) -> int:
             paths = write_reports(result, args.output_dir)
             paths.append(write_run_info(
                 build_run_info(args.data_dir, gates, args.interval_tolerance, data.warnings),
+                args.output_dir))
+            paths.append(write_summary(
+                render_summary(result, gates, data.warnings,
+                               label=auto_label(args.data_dir, args.label)),
                 args.output_dir))
             if args.plot:
                 figure = plot_audited_timeline(result, args.output_dir)

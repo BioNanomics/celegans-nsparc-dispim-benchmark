@@ -14,6 +14,7 @@ Results are always descriptive; no entry here implies biological findings.
 - Warnings (stderr, exit code unchanged) for blank `power_at_sample_mw`, `raw_sha256` or `nsparc_mode` on imaged embryos, and for a measured interval slower than planned beyond `--interval-tolerance` (default 5%).
 - `--version` flag.
 - `report` writes `run_info.json`: tool version, git commit, settings, SHA-256 of each input CSV and the warnings raised. Input folder paths are not recorded.
+- `report` writes `summary.md`, a one-page readable summary (groups, hatching with unknowns shown separately, feasibility gates, stage tables, per-embryo table, warnings). `--label` adds a data-label banner; example data in a `synthetic` folder is labeled FABRICATED automatically.
 - CI now runs on Windows as well as Ubuntu.
 
 ### Changed
