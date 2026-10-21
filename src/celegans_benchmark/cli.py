@@ -7,6 +7,7 @@ import sys
 from .metrics import DEFAULT_INTERVAL_TOLERANCE, DataError, Gates, load_data, plot_audited_timeline, summarize, write_reports
 from . import __version__
 from .checksum import sha256_file, verify_raw
+from .provenance import build_run_info, write_run_info
 from .runfolder import init_run
 
 
@@ -68,9 +69,12 @@ def main(argv: list[str] | None = None) -> int:
         if not data.acquisitions:
             print("No embryo rows found. Empty templates validated; no results to analyze.")
         if args.command == "report":
-            result = summarize(data, Gates(args.recall_threshold, args.lineage_threshold,
-                                           args.recall_through_cells))
+            gates = Gates(args.recall_threshold, args.lineage_threshold, args.recall_through_cells)
+            result = summarize(data, gates)
             paths = write_reports(result, args.output_dir)
+            paths.append(write_run_info(
+                build_run_info(args.data_dir, gates, args.interval_tolerance, data.warnings),
+                args.output_dir))
             if args.plot:
                 figure = plot_audited_timeline(result, args.output_dir)
                 if figure is not None:

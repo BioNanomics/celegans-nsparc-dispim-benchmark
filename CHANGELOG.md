@@ -13,6 +13,7 @@ Results are always descriptive; no entry here implies biological findings.
 - `checksum` (chunked SHA-256) and `verify-raw` (compare `raw_sha256` with the file at `raw_data_uri`) commands.
 - Warnings (stderr, exit code unchanged) for blank `power_at_sample_mw`, `raw_sha256` or `nsparc_mode` on imaged embryos, and for a measured interval slower than planned beyond `--interval-tolerance` (default 5%).
 - `--version` flag.
+- `report` writes `run_info.json`: tool version, git commit, settings, SHA-256 of each input CSV and the warnings raised. Input folder paths are not recorded.
 - CI now runs on Windows as well as Ubuntu.
 
 ### Changed
