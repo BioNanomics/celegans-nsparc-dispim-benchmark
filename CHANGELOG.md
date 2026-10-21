@@ -15,6 +15,7 @@ Results are always descriptive; no entry here implies biological findings.
 - `--version` flag.
 - `report` writes `run_info.json`: tool version, git commit, settings, SHA-256 of each input CSV and the warnings raised. Input folder paths are not recorded.
 - `report` writes `summary.md`, a one-page readable summary (groups, hatching with unknowns shown separately, feasibility gates, stage tables, per-embryo table, warnings). `--label` adds a data-label banner; example data in a `synthetic` folder is labeled FABRICATED automatically.
+- Scale test (`tests/test_scale.py`): runs the full pipeline on a seeded, FABRICATED study-sized dataset (30 embryos, up to 451 volumes, mixed `all` and near/far frames) and checks the report against independent recomputation from the CSVs.
 - CI now runs on Windows as well as Ubuntu.
 
 ### Changed
