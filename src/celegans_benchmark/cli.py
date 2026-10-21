@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import sys
 from .metrics import DEFAULT_INTERVAL_TOLERANCE, DataError, Gates, load_data, plot_audited_timeline, summarize, write_reports
+from . import __version__
 from .checksum import sha256_file, verify_raw
 from .runfolder import init_run
 
@@ -14,6 +15,7 @@ def main(argv: list[str] | None = None) -> int:
         prog="celegans-benchmark",
         description="Validate manually curated *C. elegans* pilot tables and generate descriptive QC.",
     )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
     validate = sub.add_parser("validate", help="Check CSV schemas, values, and embryo references")
     validate.add_argument("--data-dir", required=True, help="Folder containing five run CSVs")
