@@ -61,5 +61,23 @@ class IntegerFieldFormsTests(unittest.TestCase):
         self.assertTrue(report["lineage_stage_qc"])
 
 
+class SpotCountReadingTests(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.file = Path(tmp.name) / "counts.txt"
+
+    def test_spaces_around_header_names(self):
+        from celegans_benchmark.audit import read_spot_counts
+        self.file.write_text(" time_point , spots \n0,4\n1, 6 \n", encoding="utf-8")
+        self.assertEqual(read_spot_counts(self.file), ({0: 4, 1: 6}, []))
+
+    def test_error_names_the_real_file_line(self):
+        from celegans_benchmark.audit import read_spot_counts
+        self.file.write_text("# a\n# b\n\ntime_point,spots\n0,4\n1,x\n", encoding="utf-8")
+        with self.assertRaisesRegex(DataError, "line 6"):
+            read_spot_counts(self.file)
+
+
 if __name__ == "__main__":
     unittest.main()

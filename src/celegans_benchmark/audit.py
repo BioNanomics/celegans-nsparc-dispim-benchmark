@@ -26,17 +26,21 @@ def read_spot_counts(path: str | Path) -> tuple[dict[int, int], list[int]]:
     if not p.is_file():
         raise DataError(f"Spot-count file not found: {p}")
     with p.open(encoding="utf-8-sig", newline="") as handle:
-        lines = [line for line in handle if line.strip() and not line.lstrip().startswith("#")]
-    reader = csv.DictReader(lines)
-    if reader.fieldnames is None or [f.strip() for f in reader.fieldnames] != ["time_point", "spots"]:
-        raise DataError(f"{p.name}: header must be exactly 'time_point,spots'")
+        # keep each record's real line number in the file for error messages
+        numbered = [(n, line) for n, line in enumerate(handle, start=1)
+                    if line.strip() and not line.lstrip().startswith("#")]
+    if not numbered or [f.strip() for f in next(csv.reader([numbered[0][1]]))] != ["time_point", "spots"]:
+        raise DataError(f"{p.name}: header must be 'time_point,spots'")
     counts: dict[int, int] = {}
     blank: list[int] = []
     seen: set[int] = set()
-    for line, row in enumerate(reader, start=2):
-        t_raw, n_raw = (row.get("time_point") or "").strip(), (row.get("spots") or "").strip()
+    for line, text in numbered[1:]:
+        fields = [f.strip() for f in next(csv.reader([text]))]
+        if len(fields) != 2:
+            raise DataError(f"{p.name} line {line}: expected 2 values, got {len(fields)}")
+        t_raw, n_raw = fields
         if not t_raw.isdigit():
-            raise DataError(f"{p.name} row {line}: time_point must be a non-negative integer, got {t_raw!r}")
+            raise DataError(f"{p.name} line {line}: time_point must be a non-negative integer, got {t_raw!r}")
         t = int(t_raw)
         if t in seen:
             raise DataError(f"{p.name}: duplicate time_point {t}")
@@ -46,7 +50,7 @@ def read_spot_counts(path: str | Path) -> tuple[dict[int, int], list[int]]:
         elif n_raw.isdigit():
             counts[t] = int(n_raw)
         else:
-            raise DataError(f"{p.name} row {line}: spots must be a non-negative integer or blank, got {n_raw!r}")
+            raise DataError(f"{p.name} line {line}: spots must be a non-negative integer or blank, got {n_raw!r}")
     if not seen:
         raise DataError(f"{p.name}: no rows")
     return counts, blank
