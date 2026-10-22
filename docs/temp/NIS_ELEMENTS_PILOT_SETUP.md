@@ -112,3 +112,89 @@ CONTROL embryos get **no** repeated fluorescence. Follow them by transmitted lig
 - Stop rules and the maximum acceptable exposure.
 - Whether raw and processed NSPARC can be exported from one scan.
 - Who images, who reviews, and the first imaging date.
+
+---
+
+## Session log: 2026-10-22 (no sample; settings read from NIS only, no laser used)
+
+### Instrument as found
+
+| Item | Value |
+|---|---|
+| Software | NIS-Elements AR 6.20.02, build 2065, 64-bit |
+| System | Nikon AX confocal on Ti2, NSPARC detector ("AX NSPARC" light path) |
+| Lasers | 405, 488, 561, 640 nm |
+| NSPARC modes | SR Mode, CF Mode; "Live Deconvolution for SR Mode" option; virtual pinhole slider |
+| Objectives on nosepiece | 4x, 10x, 20x, 60x (Plan Apo λD 60x oil, OFN25, DIC N2), 100x (Plan Apo λD 100x oil), 20x |
+| 60x NA | not yet recorded (read from objective barrel) |
+| Focus | Perfect Focus System (PFS) present |
+
+### Optical experiment created
+
+- Name: `Celegans_BV514_NSPARC_pilot` (created with Add > Based on Dyes, then Save As; other experiments untouched).
+- One channel: mCherry, 561 nm excitation, detection 570-616 nm. No transmitted (TD) channel.
+- Fast (hardware-driven) experiment, single pass. CF Mode. 60x.
+- Scanning bidirectional, integrating 1, dwell 1, scan area 512.
+- Laser power left at the default (3.0%); to be set with a sample.
+
+### Frame times read from NIS (60x, no scanning performed)
+
+| Setup | Scanning | Scan area | Frame time |
+|---|---|---|---|
+| Previous 4-channel setup | Bidirectional | 1024 | 3.9 s |
+| Previous 4-channel setup | Bidirectional | 512 | 2.0 s |
+| Previous 4-channel setup | Unidirectional | 512 | 4.0 s |
+| mCherry only | Unidirectional | 2048 | 5.8 s |
+| **mCherry only (current)** | **Bidirectional** | **512** | **0.49 s** |
+
+Estimate for one Z stack at 0.49 s per slice: 40 slices ~20 s, 60 slices ~30 s, before Z-move and focus overhead. If that holds, the 60 s arm fits. **Not yet measured; confirm with a timed stack on a sample.**
+
+### Findings to discuss with the lab manager
+
+1. **No 40x objective is installed.** The protocol suggests e.g. a 40x water/silicone objective; the realistic options here are the 60x oil or 100x oil. Is an oil objective acceptable for live embryos in aqueous buffer?
+2. **Pixel size.** At 60x, 512, zoom 1, pixels are 0.58 µm; the protocol suggests 0.15-0.20 µm. Plan: zoom ~3x on the embryo (field ~100 µm), which keeps 512 x 512 and should keep the frame time.
+3. **The laser "TD" (transmitted) channel uses the 561 nm laser.** CONTROL embryos must be followed with the lamp (DIC/brightfield), not the laser TD channel.
+4. **Detection window 570-616 nm** covers the mCherry peak but not its long tail; revisit if nuclei are dim.
+5. **NSPARC mode:** CF vs SR, and whether both can be saved from one scan, is still open.
+
+### Templates to prepare (ND Acquisition)
+
+| # | Name | Purpose | Time | Z | Volumes |
+|---|---|---|---|---|---|
+| 1 | `Celegans_BV514_NSPARC_pilot` | Optical setup | - | - | - |
+| 2 | `Celegans_01_stack_timing` | Time one Z stack (fit test) | none | whole embryo | 1 |
+| 3 | `Celegans_02_pilot_short_60s` | Short trial first (protocol step 6) | 60 s for 60 min | whole embryo | 61 |
+| 4 | `Celegans_03_NSPARC_60s_full` | NSPARC_60s arm | 60 s for 450 min | whole embryo | 451 |
+| 5 | `Celegans_04_NSPARC_180s_full` | NSPARC_180s arm | 180 s for 450 min | same Z as #4 | 151 |
+| 6 | `Celegans_05_followup_brightfield` | CONTROL and hatching follow-up for all groups (lamp only, no laser) | same schedule for every group (lab decision) | single plane or a few | - |
+
+Set during the first imaging session: Z range and step, zoom/crop, laser power, PFS offset, XY positions.
+
+### Templates saved (verified 2026-10-22 by reading NIS's stored ND settings)
+
+ND Acquisition templates, all saving ND2 to `D:\Qurratul_Celegans\TimelapsePath` (outside the git repo):
+
+| Template | Interval | Duration | Stacks | Z step | Close shutter when idle | PFS |
+|---|---|---|---|---|---|---|
+| `Celegans_01_stack_timing` | no time loop | - | 1 | 0.75 µm | - | off |
+| `Celegans_02_pilot_short_60s` | 60 s | 60 min | 61 | 0.75 µm | on | off |
+| `Celegans_03_NSPARC_60s_full` | 60 s | 450 min | 451 | 0.75 µm | on | off |
+| `Celegans_04_NSPARC_180s_full` | 180 s | 450 min | 151 | 0.75 µm | on | off |
+| `Celegans_05_followup_brightfield` | not created yet: needs the manager's follow-up schedule (lamp only, no laser) | | | | | |
+
+Notes:
+- **In every template Z Top = Bottom = 488.04 µm, i.e. ONE slice.** This is a placeholder from setting up without a sample. The real range must be set on the embryo each run (see checklist below).
+- `Celegans_01_stack_timing` is stored twice (older and newer copy); harmless, the older one can be removed.
+- Another group's stored setup (LilyOTV) was left untouched.
+- A test acquisition ran by accident at 19:17 without a sample (561 nm laser on briefly); it wrote `Celegans_01_stack_timing.nd2` (one blank slice). Not data; do not use.
+- Danger found and fixed: the ND panel initially held a leftover Z range ~5.9 mm above the current focus (from another experiment). It was cleared with Reset. Always check Relative Positions before running.
+
+### Run checklist (every imaging session, before pressing Run)
+
+1. Select optical experiment `Celegans_BV514_NSPARC_pilot`; confirm one channel (mCherry, 561 nm), 512, bidirectional, integrating 1.
+2. Load the ND template for the arm (`Celegans_02/03/04`).
+3. In Z: press **Reset**, then focus on the top of the embryo and press **Top**, the bottom and press **Bottom**. Check Range (~30 µm), Steps (~41 at 0.75 µm) and that Relative Positions are small (tens of µm, never thousands).
+4. Set zoom/crop to the embryo (target ~0.2 µm pixels) and the lowest usable laser power; record power at the sample in mW.
+5. Decide PFS on/off with the sample and record it.
+6. Change the filename to include the `embryo_id`.
+7. Time one stack first (`Celegans_01_stack_timing`) and confirm it fits the interval before a long run.
