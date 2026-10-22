@@ -55,15 +55,21 @@ def main(argv: list[str] | None = None) -> int:
     select.add_argument("--output", required=True, help="Frame list to create (never overwritten)")
     select.add_argument("--per-stage", type=int, default=2, help="Frames per stage (default 2)")
     select.add_argument("--seed", type=int, default=0, help="Random seed; record it (default 0)")
+    select.add_argument("--first-time-point", type=int, default=0,
+                        help="Number of the tracker's first time point: 0 (e.g. Mastodon) or 1 "
+                             "(e.g. StarryNite/AceTree); volume_index = time_point - this (default 0)")
     check = sub.add_parser("check-audit",
                            help="Compare tp+fp of audited frames with the tracker's spot counts")
     check.add_argument("--data-dir", required=True)
     check.add_argument("--embryo-id", required=True, help="Embryo the spot-count file belongs to")
     check.add_argument("--spot-counts", required=True, help="CSV with header time_point,spots")
+    check.add_argument("--first-time-point", type=int, default=0,
+                        help="Number of the tracker's first time point: 0 (e.g. Mastodon) or 1 "
+                             "(e.g. StarryNite/AceTree); volume_index = time_point - this (default 0)")
     args = parser.parse_args(argv)
     try:
         if args.command == "check-audit":
-            results = check_audit(args.data_dir, args.embryo_id, args.spot_counts)
+            results = check_audit(args.data_dir, args.embryo_id, args.spot_counts, args.first_time_point)
             if not results:
                 print(f"No audited frames for {args.embryo_id}; nothing to check.")
                 return 0
@@ -77,7 +83,7 @@ def main(argv: list[str] | None = None) -> int:
             return 1 if mismatches else 0
         if args.command == "select-frames":
             counts, blank = read_spot_counts(args.spot_counts)
-            rows = select_frames(counts, args.per_stage, args.seed)
+            rows = select_frames(counts, args.per_stage, args.seed, args.first_time_point)
             if not rows:
                 raise DataError("no frames with a known spot count; nothing to select")
             digest = write_selection(rows, args.output)

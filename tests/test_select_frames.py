@@ -69,7 +69,7 @@ class SelectFramesTests(unittest.TestCase):
 
     def test_exactly_100_is_100_199(self):
         rows = select_frames({0: 100}, per_stage=1, seed=0)
-        self.assertEqual(rows, [{"time_point": 0, "estimated_spots": 100, "stage": "100-199"}])
+        self.assertEqual(rows, [{"time_point": 0, "volume_index": 0, "estimated_spots": 100, "stage": "100-199"}])
 
     def test_single_frame(self):
         self.assertEqual(len(select_frames({7: 3}, per_stage=5, seed=0)), 1)
@@ -101,11 +101,11 @@ class WriteSelectionTests(unittest.TestCase):
 
     def test_writes_csv_and_returns_its_sha256(self):
         out = self.root / "frames.csv"
-        digest = write_selection([{"time_point": 3, "estimated_spots": 8, "stage": "<16"}], out)
+        digest = write_selection([{"time_point": 3, "volume_index": 3, "estimated_spots": 8, "stage": "<16"}], out)
         self.assertEqual(digest, hashlib.sha256(out.read_bytes()).hexdigest())
         with out.open(encoding="utf-8", newline="") as f:
             self.assertEqual(list(csv.DictReader(f)),
-                             [{"time_point": "3", "estimated_spots": "8", "stage": "<16"}])
+                             [{"time_point": "3", "volume_index": "3", "estimated_spots": "8", "stage": "<16"}])
 
     def test_refuses_to_overwrite_a_frozen_list(self):
         out = self.root / "frames.csv"

@@ -79,5 +79,60 @@ class SpotCountReadingTests(unittest.TestCase):
             read_spot_counts(self.file)
 
 
+class FirstTimePointTests(unittest.TestCase):
+    """Trackers such as StarryNite/AceTree number time points from 1; volume_index is 0-based."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+        self.counts = self.root / "counts.txt"
+        self.counts.write_text("time_point,spots\n1,4\n2,6\n3,20\n", encoding="utf-8")
+        (self.root / "acquisitions.csv").write_text(
+            "embryo_id,group,strain,reporter,temperature_c,planned_interval_s,measured_interval_s,recorded_volumes\n"
+            "e1,NSPARC_60s,BV514,mCherry,20,60,60,10\n")
+        (self.root / "embryo_outcomes.csv").write_text(
+            "embryo_id,hatched,hatch_t_min,abnormal_development,excluded,exclusion_reason\n")
+        (self.root / "nuclei_qc.csv").write_text(
+            "embryo_id,volume_index,t_min,manual_cell_count,tp,fp,fn,depth_region\n"
+            "e1,0,0,4,4,0,0,all\ne1,1,1,6,6,0,0,all\n")
+        (self.root / "lineage_qc.csv").write_text(
+            "embryo_id,event_id,t_min,stage_cell_count,verified,correct\n")
+        (self.root / "milestones.csv").write_text("embryo_id,milestone,t_min\n")
+
+    def test_check_audit_with_one_based_tracker(self):
+        from celegans_benchmark.audit import check_audit
+        zero = [r["status"] for r in check_audit(self.root, "e1", self.counts)]
+        one = [r["status"] for r in check_audit(self.root, "e1", self.counts, first_time_point=1)]
+        self.assertEqual(zero, ["not_checkable", "mismatch"])   # wrong alignment
+        self.assertEqual(one, ["ok", "ok"])
+
+    def test_select_frames_reports_both_numbers(self):
+        from celegans_benchmark.audit import select_frames
+        rows = select_frames({1: 4, 2: 60}, per_stage=1, seed=0, first_time_point=1)
+        self.assertEqual([(r["time_point"], r["volume_index"]) for r in rows], [(1, 0), (2, 1)])
+
+    def test_time_point_before_first_is_rejected(self):
+        from celegans_benchmark.audit import select_frames
+        with self.assertRaisesRegex(DataError, "first_time_point"):
+            select_frames({0: 4}, per_stage=1, seed=0, first_time_point=1)
+
+    def test_negative_first_time_point_rejected(self):
+        from celegans_benchmark.audit import select_frames
+        with self.assertRaises(DataError):
+            select_frames({0: 4}, per_stage=1, seed=0, first_time_point=-1)
+
+    def test_cli_option(self):
+        import contextlib, io
+        from celegans_benchmark.cli import main
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            code = main(["check-audit", "--data-dir", str(self.root), "--embryo-id", "e1",
+                         "--spot-counts", str(self.counts), "--first-time-point", "1"])
+            sel = main(["select-frames", "--spot-counts", str(self.counts), "--output",
+                        str(self.root / "f.csv"), "--first-time-point", "1"])
+        self.assertEqual((code, sel), (0, 0))
+        self.assertIn("volume_index", (self.root / "f.csv").read_text(encoding="utf-8"))
+
+
 if __name__ == "__main__":
     unittest.main()
