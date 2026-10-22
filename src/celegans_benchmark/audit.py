@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from .checksum import sha256_file
-from .metrics import STAGES, DataError, stage_of
+from .metrics import STAGES, DataError, load_data, stage_of
 
 SELECTION_FIELDS = ("time_point", "estimated_spots", "stage")
 
@@ -81,3 +81,30 @@ def write_selection(rows: list[dict[str, Any]], path: str | Path) -> str:
         writer.writeheader()
         writer.writerows(rows)
     return sha256_file(p)
+
+
+def check_audit(data_dir: str | Path, embryo_id: str,
+                spot_counts: str | Path) -> list[dict[str, Any]]:
+    """Compare tp+fp of each audited frame of one embryo with the tracker's spot count.
+
+    Every tracker spot is either a true or a false detection, so tp+fp should equal the
+    tracker's count for that frame. Near/far rows are summed per frame. A frame absent from
+    the counts file, or with a blank count, is 'not_checkable' (unknown), never a mismatch.
+    """
+    ds = load_data(data_dir)
+    if embryo_id not in ds.embryos:
+        raise DataError(f"Unknown embryo_id {embryo_id!r} in {Path(data_dir) / 'acquisitions.csv'}")
+    counts, _ = read_spot_counts(spot_counts)
+    totals: dict[int, int] = {}
+    for r in ds.nuclei:
+        if r["embryo_id"] == embryo_id:
+            vol = int(r["volume_index"])
+            totals[vol] = totals.get(vol, 0) + int(r["tp"]) + int(r["fp"])
+    results = []
+    for vol in sorted(totals):
+        tracker = counts.get(vol)
+        status = ("not_checkable" if tracker is None
+                  else "ok" if tracker == totals[vol] else "mismatch")
+        results.append({"embryo_id": embryo_id, "volume_index": vol, "tp_plus_fp": totals[vol],
+                        "tracker_spots": tracker, "status": status})
+    return results

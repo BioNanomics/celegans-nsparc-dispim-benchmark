@@ -7,7 +7,7 @@ import sys
 from .metrics import (DEFAULT_INTERVAL_TOLERANCE, STAGES, DataError, Gates, load_data,
                       plot_audited_timeline, stage_of, summarize, write_reports)
 from . import __version__
-from .audit import read_spot_counts, select_frames, write_selection
+from .audit import check_audit, read_spot_counts, select_frames, write_selection
 from .checksum import sha256_file, verify_raw
 from .provenance import build_run_info, write_run_info
 from .runfolder import init_run
@@ -55,8 +55,26 @@ def main(argv: list[str] | None = None) -> int:
     select.add_argument("--output", required=True, help="Frame list to create (never overwritten)")
     select.add_argument("--per-stage", type=int, default=2, help="Frames per stage (default 2)")
     select.add_argument("--seed", type=int, default=0, help="Random seed; record it (default 0)")
+    check = sub.add_parser("check-audit",
+                           help="Compare tp+fp of audited frames with the tracker's spot counts")
+    check.add_argument("--data-dir", required=True)
+    check.add_argument("--embryo-id", required=True, help="Embryo the spot-count file belongs to")
+    check.add_argument("--spot-counts", required=True, help="CSV with header time_point,spots")
     args = parser.parse_args(argv)
     try:
+        if args.command == "check-audit":
+            results = check_audit(args.data_dir, args.embryo_id, args.spot_counts)
+            if not results:
+                print(f"No audited frames for {args.embryo_id}; nothing to check.")
+                return 0
+            for r in results:
+                tracker = "unknown" if r["tracker_spots"] is None else r["tracker_spots"]
+                print(f"{r['embryo_id']} volume {r['volume_index']}: {r['status']} "
+                      f"(tp+fp={r['tp_plus_fp']}, tracker={tracker})")
+            mismatches = sum(1 for r in results if r["status"] == "mismatch")
+            print(f"{mismatches} mismatch(es) in {len(results)} audited frame(s). "
+                  "A mismatch means a counting slip or the wrong frame; recount, don't adjust.")
+            return 1 if mismatches else 0
         if args.command == "select-frames":
             counts, blank = read_spot_counts(args.spot_counts)
             rows = select_frames(counts, args.per_stage, args.seed)
