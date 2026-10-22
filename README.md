@@ -67,11 +67,22 @@ python -m celegans_benchmark checksum --file D:\raw\embryo01.nd2
 
 # Compare recorded checksums with the files (blank values are "not recorded", not failures)
 python -m celegans_benchmark verify-raw --data-dir D:\private\run1 --raw-root D:\raw
+
+# Choose audit frames per stage BEFORE reviewing any results (fixed seed; list is never overwritten).
+# Input: a time_point,spots file exported from the tracker. Record the printed SHA-256.
+python -m celegans_benchmark select-frames --spot-counts D:\private\run1\E01_spots.csv --output D:\private\run1\E01_audit_frames.csv --per-stage 2 --seed 20261022
+
+# After counting: check that tp+fp of each audited frame matches the tracker's spot count
+python -m celegans_benchmark check-audit --data-dir D:\private\run1 --embryo-id E01 --spot-counts D:\private\run1\E01_spots.csv
 ```
 
 `validate` and `report` print `WARNING` lines (exit code unchanged) when an imaged embryo has a blank `power_at_sample_mw`, `raw_sha256` or `nsparc_mode`, or when `measured_interval_s` is slower than `planned_interval_s` by more than `--interval-tolerance` (default 0.05 = 5%).
 
 `report` also writes stage-resolved lineage accuracy (`lineage_stage_qc.csv`), near/far depth QC (`depth_qc.csv`) and the provisional feasibility gates (`feasibility_gates.csv`, `feasibility_gates_by_embryo.csv`). Gate status is `pass`, `fail` or `not_evaluable` (no data is never a failure). The provisional targets can be changed with `--recall-threshold` (0.95), `--lineage-threshold` (0.90) and `--recall-through-cells` (100).
+
+Every `report` also writes `summary.md`, a one-page readable summary, and `run_info.json`, which records the tool version, git commit, settings, SHA-256 of each input CSV and the warnings raised. Use `--label "PRACTICE DATA"` to put a banner on the summary; data whose `acquisitions.csv` notes say FABRICATED is labeled automatically. `python -m celegans_benchmark --version` prints the version.
+
+`select-frames` and `check-audit` assume the tracker numbers its time points from 0. Check how your tracker numbers them: if the first one is 1, add `--first-time-point 1`. `volume_index` in `nuclei_qc.csv` is always 0-based. `check-audit` exits 1 on a mismatch, which means a counting slip or the wrong frame: recount, don't adjust.
 
 ## Success measures
 
