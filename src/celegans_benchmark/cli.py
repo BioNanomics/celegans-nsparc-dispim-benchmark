@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import argparse
 import sys
-from .metrics import DEFAULT_INTERVAL_TOLERANCE, DataError, Gates, load_data, plot_audited_timeline, summarize, write_reports
+from .metrics import (DEFAULT_INTERVAL_TOLERANCE, STAGES, DataError, Gates, load_data,
+                      plot_audited_timeline, stage_of, summarize, write_reports)
 from . import __version__
+from .audit import read_spot_counts, select_frames, write_selection
 from .checksum import sha256_file, verify_raw
 from .provenance import build_run_info, write_run_info
 from .runfolder import init_run
@@ -47,8 +49,32 @@ def main(argv: list[str] | None = None) -> int:
     verify = sub.add_parser("verify-raw", help="Check raw_sha256 in acquisitions.csv against the files")
     verify.add_argument("--data-dir", required=True)
     verify.add_argument("--raw-root", help="Folder for relative raw_data_uri values")
+    select = sub.add_parser("select-frames",
+                            help="Choose audit frames per stage in advance from tracker spot counts")
+    select.add_argument("--spot-counts", required=True, help="CSV with header time_point,spots")
+    select.add_argument("--output", required=True, help="Frame list to create (never overwritten)")
+    select.add_argument("--per-stage", type=int, default=2, help="Frames per stage (default 2)")
+    select.add_argument("--seed", type=int, default=0, help="Random seed; record it (default 0)")
     args = parser.parse_args(argv)
     try:
+        if args.command == "select-frames":
+            counts, blank = read_spot_counts(args.spot_counts)
+            rows = select_frames(counts, args.per_stage, args.seed)
+            if not rows:
+                raise DataError("no frames with a known spot count; nothing to select")
+            digest = write_selection(rows, args.output)
+            for stage in STAGES:
+                picked = sum(1 for r in rows if r["stage"] == stage)
+                available = sum(1 for n in counts.values() if stage_of(n) == stage)
+                print(f"{stage}: {picked} of {available} frame(s) selected" if available
+                      else f"{stage}: not selectable (no frames at this stage)")
+            if blank:
+                print(f"{len(blank)} time point(s) with blank spot count were not eligible.")
+            print(f"Wrote {args.output} (seed {args.seed}, {args.per_stage} per stage)")
+            print(f"SHA-256: {digest}")
+            print("Record this hash before auditing; it shows the frames were fixed in advance. "
+                  "Stages are estimated from tracker spots, not manual counts.")
+            return 0
         if args.command == "checksum":
             print(f"{sha256_file(args.file)}  {args.file}")
             return 0
