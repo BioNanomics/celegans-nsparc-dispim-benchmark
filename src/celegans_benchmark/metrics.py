@@ -472,9 +472,11 @@ def write_reports(report: dict[str, list[dict[str, Any]]], output_dir: str | Pat
     directory.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
     for name, rows in report.items():
-        if not rows:
-            continue
         path = directory / f"{name}.csv"
+        if not rows:
+            # an older run may have written this table; leaving it would contradict report.json
+            path.unlink(missing_ok=True)
+            continue
         with path.open("w", encoding="utf-8", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
             writer.writeheader()

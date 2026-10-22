@@ -92,13 +92,15 @@ def select_frames(counts: dict[int, int], per_stage: int, seed: int,
 def write_selection(rows: list[dict[str, Any]], path: str | Path) -> str:
     """Write the frame list and return its SHA-256. Never overwrites: a chosen list is frozen."""
     p = Path(path)
-    if p.exists():
-        raise DataError(f"{p} already exists; refusing to overwrite a frozen frame list")
     p.parent.mkdir(parents=True, exist_ok=True)
-    with p.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=SELECTION_FIELDS)
-        writer.writeheader()
-        writer.writerows(rows)
+    try:
+        # mode "x" creates the file only if it does not exist, in one step (no check-then-write race)
+        with p.open("x", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=SELECTION_FIELDS)
+            writer.writeheader()
+            writer.writerows(rows)
+    except FileExistsError:
+        raise DataError(f"{p} already exists; refusing to overwrite a frozen frame list") from None
     return sha256_file(p)
 
 

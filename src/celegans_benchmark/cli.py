@@ -108,7 +108,8 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"{r['embryo_id']}: {r['status']}")
             if not results:
                 print("No embryo rows found; nothing to verify.")
-            return 1 if any(r["status"] in ("mismatch", "missing") for r in results) else 0
+            return 1 if any(r["status"] in ("mismatch", "missing", "invalid_hash")
+                            for r in results) else 0
         if args.command == "init-run":
             for path in init_run(args.run_dir, args.templates_dir):
                 print(f"Wrote {path}")

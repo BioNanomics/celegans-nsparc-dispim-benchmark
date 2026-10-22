@@ -134,5 +134,112 @@ class FirstTimePointTests(unittest.TestCase):
         self.assertIn("volume_index", (self.root / "f.csv").read_text(encoding="utf-8"))
 
 
+class FrozenListWriteTests(unittest.TestCase):
+    def test_write_uses_exclusive_create(self):
+        from unittest import mock
+        from celegans_benchmark.audit import write_selection
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "f.csv"
+            real_open = Path.open
+            modes = []
+
+            def spy(self, mode="r", *args, **kwargs):
+                modes.append(mode)
+                return real_open(self, mode, *args, **kwargs)
+
+            with mock.patch.object(Path, "open", spy):
+                write_selection([{"time_point": 0, "volume_index": 0, "estimated_spots": 4,
+                                  "stage": "<16"}], out)
+            self.assertIn("x", modes)
+
+
+class VerifyRawInvalidHashTests(unittest.TestCase):
+    def test_invalid_hash_exits_nonzero(self):
+        import contextlib, io
+        from celegans_benchmark.cli import main
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            raw = root / "e1.nd2"
+            raw.write_bytes(b"abc")
+            (root / "acquisitions.csv").write_text(
+                f"embryo_id,group,raw_data_uri,raw_sha256\ne1,NSPARC_60s,{raw},{'a' * 63}\n")
+            with contextlib.redirect_stdout(io.StringIO()) as out:
+                code = main(["verify-raw", "--data-dir", str(root)])
+            self.assertIn("invalid_hash", out.getvalue())
+            self.assertEqual(code, 1)
+
+
+class AutoLabelTests(unittest.TestCase):
+    """The FABRICATED banner follows the data (acquisitions notes), not words in the path."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+
+    def make(self, folder, notes):
+        d = self.root / folder
+        d.mkdir(parents=True)
+        (d / "acquisitions.csv").write_text(f"embryo_id,group,notes\ne1,NSPARC_60s,{notes}\n")
+        return d
+
+    def test_real_data_in_a_folder_named_synthetic_is_not_labeled(self):
+        from celegans_benchmark.summary import auto_label
+        self.assertIsNone(auto_label(self.make("synthetic_lethality/run3", "pilot day 1"), None))
+
+    def test_fabricated_data_is_labeled_wherever_it_lives(self):
+        from celegans_benchmark.summary import auto_label
+        self.assertIn("FABRICATED", auto_label(self.make("anything", "FABRICATED DEMO ONLY"), None))
+        self.assertIn("FABRICATED", auto_label(ROOT / "examples" / "synthetic", None))
+
+    def test_relative_dot_inside_example_folder(self):
+        import os
+        from celegans_benchmark.summary import auto_label
+        here = os.getcwd()
+        try:
+            os.chdir(ROOT / "examples" / "synthetic")
+            self.assertIn("FABRICATED", auto_label(".", None))
+        finally:
+            os.chdir(here)
+
+    def test_explicit_label_wins_and_missing_files_are_no_label(self):
+        from celegans_benchmark.summary import auto_label
+        self.assertEqual(auto_label(self.make("x", "FABRICATED"), "PRACTICE DATA"), "PRACTICE DATA")
+        self.assertIsNone(auto_label(self.root / "does_not_exist", None))
+        d = self.root / "nonotes"
+        d.mkdir()
+        (d / "acquisitions.csv").write_text("embryo_id,group\ne1,NSPARC_60s\n")
+        self.assertIsNone(auto_label(d, None))
+
+
+class StaleReportFilesTests(unittest.TestCase):
+    def test_rerun_removes_tables_that_are_now_empty(self):
+        import contextlib, io
+        from celegans_benchmark.cli import main
+        with tempfile.TemporaryDirectory() as tmp:
+            data = Path(tmp) / "run"
+            shutil.copytree(ROOT / "examples" / "synthetic", data)
+            out = Path(tmp) / "out"
+            nuc = data / "nuclei_qc.csv"
+            original = nuc.read_text(encoding="utf-8")
+            row = original.splitlines()[1].split(",")
+            near = ",".join(row[:3] + [str(int(row[3])), row[4], row[5], row[6], "near"])
+            far = ",".join(row[:3] + ["0", "0", "0", "0", "far"])
+            lines = original.splitlines()
+            lines[1:2] = [near, far]
+            nuc.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(main(["report", "--data-dir", str(data), "--output-dir", str(out)]), 0)
+                self.assertTrue((out / "depth_qc.csv").exists())
+                (data / "lineage_qc.csv").write_text(
+                    "embryo_id,event_id,t_min,stage_cell_count,verified,correct\n")
+                self.assertEqual(main(["report", "--data-dir", str(data), "--output-dir", str(out)]), 0)
+            self.assertFalse((out / "lineage_stage_qc.csv").exists())
+            (out / "notes_by_me.csv").write_text("keep\n")
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                main(["report", "--data-dir", str(data), "--output-dir", str(out)])
+            self.assertTrue((out / "notes_by_me.csv").exists())   # never delete files we did not write
+
+
 if __name__ == "__main__":
     unittest.main()

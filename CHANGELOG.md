@@ -16,11 +16,14 @@ Results are always descriptive; no entry here implies biological findings.
 - `select-frames` command: chooses audit frames per stage in advance from a `time_point,spots` file with a fixed seed, writes the list (never overwritten) and prints its SHA-256 so the choice can be shown to precede the audit.
 - `check-audit` command: compares tp+fp of each audited frame of one embryo with the tracker's spot count for that frame (near+far summed). Mismatches exit 1; frames without a known count are `not_checkable`, not failures.
 - `report` writes `run_info.json`: tool version, git commit, settings, SHA-256 of each input CSV and the warnings raised. Input folder paths are not recorded.
-- `report` writes `summary.md`, a one-page readable summary (groups, hatching with unknowns shown separately, feasibility gates, stage tables, per-embryo table, warnings). `--label` adds a data-label banner; example data in a `synthetic` folder is labeled FABRICATED automatically.
+- `report` writes `summary.md`, a one-page readable summary (groups, hatching with unknowns shown separately, feasibility gates, stage tables, per-embryo table, warnings). `--label` adds a data-label banner; data whose `acquisitions.csv` notes say FABRICATED is labeled FABRICATED automatically (the folder name is ignored).
 - Scale test (`tests/test_scale.py`): runs the full pipeline on a seeded, FABRICATED study-sized dataset (30 embryos, up to 451 volumes, mixed `all` and near/far frames) and checks the report against independent recomputation from the CSVs.
 - CI now runs on Windows as well as Ubuntu.
 
 ### Changed
+- Whole-number fields written as `1.0` or `01` are normalized, so they no longer crash the report or split one frame into two.
+- `verify-raw` exits 1 for a malformed `raw_sha256` (`invalid_hash`), as for a mismatch.
+- Re-running `report` into the same folder removes our tables that are now empty, so no stale CSV contradicts `report.json`.
 - Data dictionary updated for the depth-region rules.
 - `depth_region` values other than `all`, `near` and `far` are rejected.
 

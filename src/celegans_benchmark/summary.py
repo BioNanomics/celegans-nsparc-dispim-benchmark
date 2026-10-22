@@ -5,6 +5,7 @@ Only re-presents numbers already computed by metrics.summarize(); it adds no new
 
 from __future__ import annotations
 
+import csv
 from pathlib import Path
 from typing import Any
 
@@ -21,10 +22,20 @@ def fmt_rate(num: int, den: int) -> str:
 
 
 def auto_label(data_dir: str | Path, label: str | None) -> str | None:
+    """An explicit label wins; otherwise label the report FABRICATED when the data says so.
+
+    Fabricated example data carries 'FABRICATED' in acquisitions.csv notes. The folder name
+    is deliberately ignored: real data may sit under a path containing 'synthetic'.
+    """
     if label and label.strip():
         return label.strip()
-    if "synthetic" in str(data_dir).lower():
-        return _FABRICATED
+    path = Path(data_dir) / "acquisitions.csv"
+    try:
+        with path.open(encoding="utf-8-sig", newline="") as handle:
+            if any("FABRICATED" in (row.get("notes") or "").upper() for row in csv.DictReader(handle)):
+                return _FABRICATED
+    except OSError:
+        pass
     return None
 
 
