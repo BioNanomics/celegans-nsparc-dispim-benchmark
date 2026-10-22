@@ -114,6 +114,18 @@ def _number(value: str, name: str, *, required: bool = True,
     return int(parsed) if integer else parsed
 
 
+def _int_field(row: dict[str, str], field: str, name: str, *, required: bool = True) -> int | None:
+    """Parse a whole-number field and store it in canonical form ('1.0' and '01' -> '1').
+
+    Later code groups and converts these fields as text, so one spelling per value keeps
+    '1' and '01' from being treated as different frames and stops int('1.0') crashes.
+    """
+    value = _number(row[field], name, required=required, nonnegative=True, integer=True)
+    if value is not None:
+        row[field] = str(value)
+    return value
+
+
 def _flag(value: str, name: str, *, required: bool = False) -> int | None:
     if value == "" and not required:
         return None
@@ -172,7 +184,6 @@ def load_data(data_dir: str | Path,
                  milestones=loaded["milestones"])
     _unique(ds.acquisitions, "acquisitions", "embryo_id")
     _unique(ds.outcomes, "embryo_outcomes", "embryo_id")
-    _unique(ds.nuclei, "nuclei_qc", "embryo_id", "volume_index", "depth_region")
     _unique(ds.lineage, "lineage_qc", "embryo_id", "event_id")
     _unique(ds.milestones, "milestones", "embryo_id", "milestone")
     known = ds.embryos
@@ -190,8 +201,7 @@ def load_data(data_dir: str | Path,
                 val = _number(r[field], f"{eid}.{field}", nonnegative=True)
                 if val == 0:
                     raise DataError(f"{eid}.{field}: expected positive interval")
-        _number(r["recorded_volumes"], f"{eid}.recorded_volumes", required=False,
-                nonnegative=True, integer=True)
+        _int_field(r, "recorded_volumes", f"{eid}.recorded_volumes", required=False)
         if r["group"] == "CONTROL" and r["recorded_volumes"] not in ("", "0"):
             raise DataError(f"{eid}: CONTROL must not have fluorescence volumes")
 
@@ -218,12 +228,10 @@ def load_data(data_dir: str | Path,
         eid = r["embryo_id"]
         if known[eid]["group"] == "CONTROL":
             raise DataError(f"{eid}: non-imaged CONTROL cannot have fluorescence nuclei QC")
-        idx = _number(r["volume_index"], f"{eid}.volume_index", integer=True, nonnegative=True)
+        idx = _int_field(r, "volume_index", f"{eid}.volume_index")
         _number(r["t_min"], f"{eid}.t_min")
-        manual = _number(r["manual_cell_count"], f"{eid}.manual_cell_count",
-                         integer=True, nonnegative=True)
-        tp, fp, fn = (_number(r[field], f"{eid}.{field}", integer=True, nonnegative=True)
-                      for field in ("tp", "fp", "fn"))
+        manual = _int_field(r, "manual_cell_count", f"{eid}.manual_cell_count")
+        tp, fp, fn = (_int_field(r, field, f"{eid}.{field}") for field in ("tp", "fp", "fn"))
         if manual != tp + fn:
             raise DataError(f"{eid} volume {idx}: manual_cell_count must equal tp+fn")
         if r["depth_region"] not in DEPTH_REGIONS:
@@ -232,6 +240,7 @@ def load_data(data_dir: str | Path,
         vols = known[eid]["recorded_volumes"]
         if vols and idx >= int(vols):
             raise DataError(f"{eid}: QC volume_index {idx} >= recorded_volumes {vols}")
+    _unique(ds.nuclei, "nuclei_qc", "embryo_id", "volume_index", "depth_region")
 
     # A frame is audited either as one 'all' row or as a near+far partition, never both,
     # otherwise its nuclei would be counted twice.
@@ -252,8 +261,7 @@ def load_data(data_dir: str | Path,
         if known[eid]["group"] == "CONTROL":
             raise DataError(f"{eid}: non-imaged CONTROL cannot have fluorescence lineage QC")
         _number(r["t_min"], f"{eid}.lineage.t_min")
-        _number(r["stage_cell_count"], f"{eid}.stage_cell_count", integer=True,
-                nonnegative=True)
+        _int_field(r, "stage_cell_count", f"{eid}.stage_cell_count")
         verified = _flag(r["verified"], f"{eid}.verified", required=True)
         correct = _flag(r["correct"], f"{eid}.correct")
         if verified == 1 and correct is None:
