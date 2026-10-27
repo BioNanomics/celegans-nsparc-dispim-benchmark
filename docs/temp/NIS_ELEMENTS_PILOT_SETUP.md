@@ -198,3 +198,32 @@ Notes:
 5. Decide PFS on/off with the sample and record it.
 6. Change the filename to include the `embryo_id`.
 7. Time one stack first (`Celegans_01_stack_timing`) and confirm it fits the interval before a long run.
+
+---
+
+## Rehearsal results: 2026-10-23/24 (AML18 worms, NOT study data)
+
+Strain AML18 (`wtfIs3`, nuclear GFP + tagRFP in all neurons), imaged with `Celegans_BV514_NSPARC_pilot`
+(561 nm at 3%, 570-616 nm, CF mode, 512 bidirectional, integrating 1), 10x NA 0.45, Z 30 µm at 0.75 µm (41 slices),
+PFS off, worms not immobilized, room lights on. Raw ND2 and analysis outputs are kept outside git.
+
+| Run | Result |
+|---|---|
+| Single stack | 41 slices in 28.3 s (0.69 s per slice incl. Z move) |
+| 1 h, 60 s interval (`Celegans_02`) | 61/61 stacks; interval 60.00 s (59.93-60.11); stack 28.7 s; signal (99.9th pct) 378 -> 342 (90.5%) |
+| 8 h, 60 s interval | 481/481 stacks; interval 60.00 s (59.92-60.08), 0 late; stack 28.6 s, stable all night; signal 350 -> 202 (58%) |
+
+Conclusions:
+- The 60 s cadence with 41-slice stacks is reliable for a full study-length run (~31 s spare per interval).
+- Signal fell ~15% in the first hour then ~5-6% per hour. Bleaching, worms crawling out of the field/Z range and
+  worm condition are mixed together here; re-measure on immobilized samples (and at 60x, where light per area is higher).
+- Free worms moved continuously (whole-field shift ~80-100 µm), smearing nuclei within each 29 s stack:
+  **samples for nucleus tracking must be immobilized** (early embryos are naturally still).
+- Fiji macro and Python analysis of the 1 h run agree (91.9% vs 90.5% signal retained).
+
+Incidents and fixes:
+- Saved absolute Z positions in templates moved the objective to the wrong height (blank files, one aborted run).
+  Stored Top/Bottom were cleared in all `Celegans_*` templates (NIS closed, backups kept).
+  **Every run: press Reset in the Z tab and set Top/Bottom on the sample; check Relative Positions before Run.**
+- Turn room lights off before a run and keep conditions constant for the whole run.
+- Next: fresh-area test (bleaching vs sample change), a 180 s overnight comparison on a fresh slide, and one stack at 60x oil.
