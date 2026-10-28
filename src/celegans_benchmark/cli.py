@@ -10,6 +10,7 @@ from . import __version__
 from .audit import check_audit, read_spot_counts, select_frames, write_selection
 from .checksum import sha256_file, verify_raw
 from .provenance import build_run_info, write_run_info
+from .runcheck import check_run, read_nd2_run, signal_trend, write_run_check
 from .runfolder import init_run
 from .summary import auto_label, render_summary, write_summary
 
@@ -49,6 +50,13 @@ def main(argv: list[str] | None = None) -> int:
     verify = sub.add_parser("verify-raw", help="Check raw_sha256 in acquisitions.csv against the files")
     verify.add_argument("--data-dir", required=True)
     verify.add_argument("--raw-root", help="Folder for relative raw_data_uri values")
+    rc = sub.add_parser("run-check",
+                        help="Check an ND2 time-lapse: interval, late/missing stacks, stack time, signal")
+    rc.add_argument("--nd2", required=True, help="Single-channel ND2 file")
+    rc.add_argument("--planned-interval", type=float, help="Planned interval in seconds (e.g. 60)")
+    rc.add_argument("--interval-tolerance", type=float, default=DEFAULT_INTERVAL_TOLERANCE,
+                    help="Fraction an interval may exceed the plan before it counts as late (default 0.05)")
+    rc.add_argument("--out", help="Folder for run_check.json and a per-time-point CSV")
     select = sub.add_parser("select-frames",
                             help="Choose audit frames per stage in advance from tracker spot counts")
     select.add_argument("--spot-counts", required=True, help="CSV with header time_point,spots")
@@ -81,6 +89,28 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{mismatches} mismatch(es) in {len(results)} audited frame(s). "
                   "A mismatch means a counting slip or the wrong frame; recount, don't adjust.")
             return 1 if mismatches else 0
+        if args.command == "run-check":
+            starts, ends, n_z, signal = read_nd2_run(args.nd2)
+            result = check_run(starts, ends, n_z, args.planned_interval, args.interval_tolerance)
+            trend = signal_trend(signal)
+            print(f"Time points: {result['time_points']}, slices per stack: {n_z}")
+            if result["interval_s"]:
+                iv = result["interval_s"]
+                print(f"Interval: mean {iv['mean']} s (min {iv['min']}, max {iv['max']})")
+            if result["late"] is not None:
+                print(f"Late intervals: {result['late']}, estimated missing stacks: {result['missing_estimate']}")
+            if result["stack_duration_s"]:
+                sd = result["stack_duration_s"]
+                fits = result["stack_fits_interval"]
+                print(f"Stack duration: mean {sd['mean']} s, max {sd['max']} s"
+                      + ("" if fits is None else f" ({'fits' if fits else 'DOES NOT fit'} the interval)"))
+            if trend:
+                print(f"Signal (99.9th percentile): first {trend['first']}, last {trend['last']}"
+                      f" ({trend['last_pct_of_first']}% of first)")
+            if args.out:
+                for path in write_run_check(result, starts, ends, signal, args.out):
+                    print(f"Wrote {path}")
+            return 0
         if args.command == "select-frames":
             counts, blank = read_spot_counts(args.spot_counts)
             rows = select_frames(counts, args.per_stage, args.seed, args.first_time_point)

@@ -12,6 +12,7 @@ dependencies = []
 
 [project.optional-dependencies]
 plots = ["matplotlib>=3.8"]
+nd2 = ["nd2>=0.10", "numpy>=1.24"]
 
 [project.scripts]
 celegans-benchmark = "celegans_benchmark.cli:main"

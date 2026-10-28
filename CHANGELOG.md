@@ -14,6 +14,8 @@ Results are always descriptive; no entry here implies biological findings.
 - Warnings (stderr, exit code unchanged) for blank `power_at_sample_mw`, `raw_sha256` or `nsparc_mode` on imaged embryos, and for a measured interval slower than planned beyond `--interval-tolerance` (default 5%).
 - `--version` flag.
 - `select-frames` command: chooses audit frames per stage in advance from a `time_point,spots` file with a fixed seed, writes the list (never overwritten) and prints its SHA-256 so the choice can be shown to precede the audit.
+- `run-check` command (optional extra `.[nd2]`): reads an ND2 time-lapse and reports the measured interval, late and missing stacks, stack duration (from the data) and signal over time; writes `run_check.json` and a per-time-point CSV. The core package stays dependency-free.
+- `scripts/fiji_fading_curve.ijm`: Fiji macro that plots signal over time from an ND2 time-lapse.
 - `check-audit` command: compares tp+fp of each audited frame of one embryo with the tracker's spot count for that frame (near+far summed). Mismatches exit 1; frames without a known count are `not_checkable`, not failures.
 - `report` writes `run_info.json`: tool version, git commit, settings, SHA-256 of each input CSV and the warnings raised. Input folder paths are not recorded.
 - `report` writes `summary.md`, a one-page readable summary (groups, hatching with unknowns shown separately, feasibility gates, stage tables, per-embryo table, warnings). `--label` adds a data-label banner; data whose `acquisitions.csv` notes say FABRICATED is labeled FABRICATED automatically (the folder name is ignored).

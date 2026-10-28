@@ -82,6 +82,15 @@ python -m celegans_benchmark check-audit --data-dir D:\private\run1 --embryo-id 
 
 Every `report` also writes `summary.md`, a one-page readable summary, and `run_info.json`, which records the tool version, git commit, settings, SHA-256 of each input CSV and the warnings raised. Use `--label "PRACTICE DATA"` to put a banner on the summary; data whose `acquisitions.csv` notes say FABRICATED is labeled automatically. `python -m celegans_benchmark --version` prints the version.
 
+After an acquisition, check the time-lapse itself (needs the optional extra `pip install -e ".[nd2]"`):
+
+```bash
+# Interval, late/missing stacks, stack duration and signal over time, from the ND2 file
+python -m celegans_benchmark run-check --nd2 D:\raw\embryo01.nd2 --planned-interval 60 --out D:\private\run1\run_check
+```
+
+`scripts/fiji_fading_curve.ijm` is a Fiji macro (Plugins > Macros > Run) that plots signal over time from the max projection of an ND2 time-lapse, for checking the same file visually.
+
 `select-frames` and `check-audit` assume the tracker numbers its time points from 0. Check how your tracker numbers them: if the first one is 1, add `--first-time-point 1`. `volume_index` in `nuclei_qc.csv` is always 0-based. `check-audit` exits 1 on a mismatch, which means a counting slip or the wrong frame: recount, don't adjust.
 
 ## Success measures
