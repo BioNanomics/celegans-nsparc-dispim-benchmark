@@ -10,7 +10,7 @@ import csv
 import json
 import math
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from statistics import mean, stdev
 from typing import Any
@@ -28,10 +28,32 @@ TABLES: dict[str, set[str]] = {
     "milestones": {"embryo_id", "milestone", "t_min"},
 }
 GROUPS = ("NSPARC_60s", "NSPARC_180s", "CONTROL")
+# Easy to forget on imaging day and unrecoverable later: warn (never error) when blank.
+RECOMMENDED_ACQUISITION_FIELDS = ("power_at_sample_mw", "raw_sha256", "nsparc_mode")
+# Provisional: how far measured_interval_s may exceed planned_interval_s before warning (5%).
+DEFAULT_INTERVAL_TOLERANCE = 0.05
+STAGES = ("<16", "16-49", "50-99", "100-199", "200+")
+DEPTH_REGIONS = ("all", "near", "far")
 
 
 class DataError(ValueError):
     """An invalid or internally inconsistent input dataset."""
+
+
+@dataclass(frozen=True)
+class Gates:
+    """Provisional internal feasibility targets (see docs/ANALYSIS_PLAN.md); all adjustable."""
+    recall_min: float = 0.95
+    lineage_min: float = 0.90
+    recall_through_cells: int = 100  # audited frames with <= this many cells count
+
+    def __post_init__(self) -> None:
+        for name in ("recall_min", "lineage_min"):
+            value = getattr(self, name)
+            if not (math.isfinite(value) and 0 <= value <= 1):
+                raise DataError(f"{name} must be between 0 and 1, got {value!r}")
+        if self.recall_through_cells < 0:
+            raise DataError("recall_through_cells cannot be negative")
 
 
 @dataclass
@@ -41,6 +63,7 @@ class Dataset:
     nuclei: list[dict[str, str]]
     lineage: list[dict[str, str]]
     milestones: list[dict[str, str]]
+    warnings: list[str] = field(default_factory=list)
 
     @property
     def embryos(self) -> dict[str, dict[str, str]]:
@@ -91,6 +114,18 @@ def _number(value: str, name: str, *, required: bool = True,
     return int(parsed) if integer else parsed
 
 
+def _int_field(row: dict[str, str], field: str, name: str, *, required: bool = True) -> int | None:
+    """Parse a whole-number field and store it in canonical form ('1.0' and '01' -> '1').
+
+    Later code groups and converts these fields as text, so one spelling per value keeps
+    '1' and '01' from being treated as different frames and stops int('1.0') crashes.
+    """
+    value = _number(row[field], name, required=required, nonnegative=True, integer=True)
+    if value is not None:
+        row[field] = str(value)
+    return value
+
+
 def _flag(value: str, name: str, *, required: bool = False) -> int | None:
     if value == "" and not required:
         return None
@@ -108,7 +143,40 @@ def _unique(rows: list[dict[str, str]], name: str, *fields: str) -> None:
         seen.add(key)
 
 
-def load_data(data_dir: str | Path) -> Dataset:
+def acquisition_warnings(acquisitions: list[dict[str, str]]) -> list[str]:
+    """One warning per imaged embryo with blank recommended fields; CONTROL rows are skipped."""
+    found = []
+    for r in acquisitions:
+        if r["group"] == "CONTROL":
+            continue
+        blank = [f for f in RECOMMENDED_ACQUISITION_FIELDS if not r.get(f, "")]
+        if blank:
+            found.append(f"{r['embryo_id']}: blank {', '.join(blank)}")
+    return found
+
+
+def interval_warnings(acquisitions: list[dict[str, str]], tolerance: float) -> list[str]:
+    """Warn when the achieved interval is slower than planned by more than `tolerance`.
+
+    Blank intervals are unknown, never flagged; CONTROL rows and faster-than-planned
+    intervals are not flagged either.
+    """
+    if not (math.isfinite(tolerance) and tolerance >= 0):
+        raise DataError(f"interval_tolerance must be a finite number >= 0, got {tolerance!r}")
+    found = []
+    for r in acquisitions:
+        if r["group"] == "CONTROL" or not r["planned_interval_s"] or not r["measured_interval_s"]:
+            continue
+        planned, measured = float(r["planned_interval_s"]), float(r["measured_interval_s"])
+        if measured - planned > tolerance * planned + 1e-9:  # epsilon: exactly at the limit is OK
+            found.append(f"{r['embryo_id']}: measured interval {r['measured_interval_s']} s exceeds "
+                         f"planned {r['planned_interval_s']} s by {(measured / planned - 1):.1%} "
+                         f"(tolerance {tolerance * 100:.4g}%)")
+    return found
+
+
+def load_data(data_dir: str | Path,
+              interval_tolerance: float = DEFAULT_INTERVAL_TOLERANCE) -> Dataset:
     root = Path(data_dir)
     loaded = {stem: _read(root / f"{stem}.csv", required) for stem, required in TABLES.items()}
     ds = Dataset(acquisitions=loaded["acquisitions"], outcomes=loaded["embryo_outcomes"],
@@ -116,7 +184,6 @@ def load_data(data_dir: str | Path) -> Dataset:
                  milestones=loaded["milestones"])
     _unique(ds.acquisitions, "acquisitions", "embryo_id")
     _unique(ds.outcomes, "embryo_outcomes", "embryo_id")
-    _unique(ds.nuclei, "nuclei_qc", "embryo_id", "volume_index")
     _unique(ds.lineage, "lineage_qc", "embryo_id", "event_id")
     _unique(ds.milestones, "milestones", "embryo_id", "milestone")
     known = ds.embryos
@@ -134,8 +201,7 @@ def load_data(data_dir: str | Path) -> Dataset:
                 val = _number(r[field], f"{eid}.{field}", nonnegative=True)
                 if val == 0:
                     raise DataError(f"{eid}.{field}: expected positive interval")
-        _number(r["recorded_volumes"], f"{eid}.recorded_volumes", required=False,
-                nonnegative=True, integer=True)
+        _int_field(r, "recorded_volumes", f"{eid}.recorded_volumes", required=False)
         if r["group"] == "CONTROL" and r["recorded_volumes"] not in ("", "0"):
             raise DataError(f"{eid}: CONTROL must not have fluorescence volumes")
 
@@ -162,27 +228,40 @@ def load_data(data_dir: str | Path) -> Dataset:
         eid = r["embryo_id"]
         if known[eid]["group"] == "CONTROL":
             raise DataError(f"{eid}: non-imaged CONTROL cannot have fluorescence nuclei QC")
-        idx = _number(r["volume_index"], f"{eid}.volume_index", integer=True, nonnegative=True)
+        idx = _int_field(r, "volume_index", f"{eid}.volume_index")
         _number(r["t_min"], f"{eid}.t_min")
-        manual = _number(r["manual_cell_count"], f"{eid}.manual_cell_count",
-                         integer=True, nonnegative=True)
-        tp, fp, fn = (_number(r[field], f"{eid}.{field}", integer=True, nonnegative=True)
-                      for field in ("tp", "fp", "fn"))
+        manual = _int_field(r, "manual_cell_count", f"{eid}.manual_cell_count")
+        tp, fp, fn = (_int_field(r, field, f"{eid}.{field}") for field in ("tp", "fp", "fn"))
         if manual != tp + fn:
             raise DataError(f"{eid} volume {idx}: manual_cell_count must equal tp+fn")
-        if r["depth_region"] != "all":
-            raise DataError(f"{eid} volume {idx}: this starter tool accepts depth_region='all' only")
+        if r["depth_region"] not in DEPTH_REGIONS:
+            raise DataError(f"{eid} volume {idx}: depth_region must be one of "
+                            f"{', '.join(DEPTH_REGIONS)}, got {r['depth_region']!r}")
         vols = known[eid]["recorded_volumes"]
         if vols and idx >= int(vols):
             raise DataError(f"{eid}: QC volume_index {idx} >= recorded_volumes {vols}")
+    _unique(ds.nuclei, "nuclei_qc", "embryo_id", "volume_index", "depth_region")
+
+    # A frame is audited either as one 'all' row or as a near+far partition, never both,
+    # otherwise its nuclei would be counted twice.
+    frame_rows: dict[tuple[str, str], list[dict[str, str]]] = defaultdict(list)
+    for r in ds.nuclei:
+        frame_rows[(r["embryo_id"], r["volume_index"])].append(r)
+    for (eid, vol), rows in frame_rows.items():
+        regions = {r["depth_region"] for r in rows}
+        if "all" in regions and len(regions) > 1:
+            raise DataError(f"{eid} volume {vol}: cannot have both 'all' and near/far rows")
+        if regions not in ({"all"}, {"near", "far"}):
+            raise DataError(f"{eid} volume {vol}: near and far rows must be given together")
+        if len({float(r["t_min"]) for r in rows}) > 1:
+            raise DataError(f"{eid} volume {vol}: rows of one frame must share the same t_min")
 
     for r in ds.lineage:
         eid = r["embryo_id"]
         if known[eid]["group"] == "CONTROL":
             raise DataError(f"{eid}: non-imaged CONTROL cannot have fluorescence lineage QC")
         _number(r["t_min"], f"{eid}.lineage.t_min")
-        _number(r["stage_cell_count"], f"{eid}.stage_cell_count", integer=True,
-                nonnegative=True)
+        _int_field(r, "stage_cell_count", f"{eid}.stage_cell_count")
         verified = _flag(r["verified"], f"{eid}.verified", required=True)
         correct = _flag(r["correct"], f"{eid}.correct")
         if verified == 1 and correct is None:
@@ -194,19 +273,16 @@ def load_data(data_dir: str | Path) -> Dataset:
         if not r["milestone"]:
             raise DataError(f"{r['embryo_id']}: milestone name cannot be blank")
         _number(r["t_min"], f"{r['embryo_id']}.milestone.t_min")
+    ds.warnings = (acquisition_warnings(ds.acquisitions)
+                   + interval_warnings(ds.acquisitions, interval_tolerance))
     return ds
 
 
 def stage_of(nuclei: int) -> str:
-    if nuclei < 16:
-        return "<16"
-    if nuclei < 50:
-        return "16-49"
-    if nuclei < 100:
-        return "50-99"
-    if nuclei < 200:
-        return "100-199"
-    return "200+"
+    for stage, upper in zip(STAGES, (16, 50, 100, 200)):
+        if nuclei < upper:
+            return stage
+    return STAGES[-1]
 
 
 def _rates(tp: int, fp: int, fn: int) -> dict[str, float | None]:
@@ -216,15 +292,50 @@ def _rates(tp: int, fp: int, fn: int) -> dict[str, float | None]:
             "f1": frac(2 * tp, 2 * tp + fp + fn)}
 
 
-def summarize(ds: Dataset) -> dict[str, list[dict[str, Any]]]:
+def _frames(rows: list[dict[str, str]]) -> list[dict[str, Any]]:
+    """Collapse region rows into one record per audited frame.
+
+    Counts are summed over the frame's rows (near+far partition the frame), so the stage
+    is binned by the frame's TOTAL count and each frame is counted once.
+    """
+    grouped: dict[tuple[str, int], list[dict[str, str]]] = defaultdict(list)
+    for r in rows:
+        grouped[(r["embryo_id"], int(r["volume_index"]))].append(r)
+    return [{"embryo_id": eid, "volume_index": vol, "t_min": parts[0]["t_min"],
+             "manual_cell_count": sum(int(r["manual_cell_count"]) for r in parts),
+             **{f: sum(int(r[f]) for r in parts) for f in ("tp", "fp", "fn")}}
+            for (eid, vol), parts in sorted(grouped.items())]
+
+
+def _gate_counts(qc: list[dict[str, str]], links: list[dict[str, str]],
+                 gates: Gates) -> dict[str, tuple[int, int, float]]:
+    """(numerator, denominator, threshold) per gate for one set of audited rows."""
+    frames = [r for r in qc if int(r["manual_cell_count"]) <= gates.recall_through_cells]
+    return {
+        "detection_recall": (sum(int(r["tp"]) for r in frames),
+                             sum(int(r["tp"]) + int(r["fn"]) for r in frames), gates.recall_min),
+        "lineage_correct": (sum(int(r["correct"]) for r in links), len(links), gates.lineage_min),
+    }
+
+
+def _gate_row(num: int, den: int, threshold: float) -> dict[str, Any]:
+    """Pass/fail needs a denominator; with none the gate is not evaluable, never a fail."""
+    value = num / den if den else None
+    status = "not_evaluable" if value is None else ("pass" if value >= threshold else "fail")
+    return {"threshold": threshold, "numerator": num, "denominator": den,
+            "value": value, "status": status}
+
+
+def summarize(ds: Dataset, gates: Gates | None = None) -> dict[str, list[dict[str, Any]]]:
+    gates = gates or Gates()
     outcomes = {r["embryo_id"]: r for r in ds.outcomes}
     active = {r["embryo_id"]: r for r in ds.acquisitions
               if outcomes.get(r["embryo_id"], {}).get("excluded") != "1"}
-    by_emb_nuc: dict[str, list[dict[str, str]]] = defaultdict(list)
+    by_emb_nuc: dict[str, list[dict[str, Any]]] = defaultdict(list)
     by_emb_lin: dict[str, list[dict[str, str]]] = defaultdict(list)
-    for r in ds.nuclei:
-        if r["embryo_id"] in active:
-            by_emb_nuc[r["embryo_id"]].append(r)
+    frames = _frames([r for r in ds.nuclei if r["embryo_id"] in active])
+    for frame in frames:
+        by_emb_nuc[frame["embryo_id"]].append(frame)
     for r in ds.lineage:
         if r["embryo_id"] in active and r["verified"] == "1":
             by_emb_lin[r["embryo_id"]].append(r)
@@ -280,10 +391,8 @@ def summarize(ds: Dataset) -> dict[str, list[dict[str, Any]]]:
     stage_totals: dict[tuple[str, str], dict[str, int]] = defaultdict(
         lambda: {"audited_volumes": 0, "tp": 0, "fp": 0, "fn": 0})
     timeline = []
-    for r in ds.nuclei:
+    for r in frames:
         eid = r["embryo_id"]
-        if eid not in active:
-            continue
         group = active[eid]["group"]
         stage = stage_of(int(r["manual_cell_count"]))
         vals = stage_totals[(group, stage)]
@@ -294,7 +403,37 @@ def summarize(ds: Dataset) -> dict[str, list[dict[str, Any]]]:
                          "t_min": float(r["t_min"]), "manual_cell_count": int(r["manual_cell_count"])})
     stage_rows = [{"group": group, "stage": stage, **vals, **_rates(vals["tp"], vals["fp"], vals["fn"])}
                   for (group, stage), vals in sorted(stage_totals.items(),
-                      key=lambda x: (GROUPS.index(x[0][0]), ["<16", "16-49", "50-99", "100-199", "200+"].index(x[0][1])))]
+                      key=lambda x: (GROUPS.index(x[0][0]), STAGES.index(x[0][1])))]
+
+    frame_total = {(f["embryo_id"], f["volume_index"]): f["manual_cell_count"] for f in frames}
+    depth_totals: dict[tuple[str, str, str], dict[str, int]] = defaultdict(
+        lambda: {"audited_volumes": 0, "tp": 0, "fp": 0, "fn": 0})
+    for r in ds.nuclei:
+        if r["embryo_id"] not in active:
+            continue
+        stage = stage_of(frame_total[(r["embryo_id"], int(r["volume_index"]))])
+        vals = depth_totals[(active[r["embryo_id"]]["group"], r["depth_region"], stage)]
+        vals["audited_volumes"] += 1
+        for field in ("tp", "fp", "fn"):
+            vals[field] += int(r[field])
+    depth_rows = [{"group": group, "depth_region": region, "stage": stage, **vals,
+                   **_rates(vals["tp"], vals["fp"], vals["fn"])}
+                  for (group, region, stage), vals in sorted(
+                      depth_totals.items(), key=lambda x: (GROUPS.index(x[0][0]),
+                      DEPTH_REGIONS.index(x[0][1]), STAGES.index(x[0][2])))]
+
+    lineage_totals: dict[tuple[str, str], dict[str, int]] = defaultdict(
+        lambda: {"verified_lineage_events": 0, "correct_lineage_events": 0})
+    for eid, links in by_emb_lin.items():
+        for r in links:
+            vals = lineage_totals[(active[eid]["group"], stage_of(int(r["stage_cell_count"])))]
+            vals["verified_lineage_events"] += 1
+            vals["correct_lineage_events"] += int(r["correct"])
+    lineage_stage_rows = [
+        {"group": group, "stage": stage, **vals,
+         "lineage_correct_fraction": vals["correct_lineage_events"] / vals["verified_lineage_events"]}
+        for (group, stage), vals in sorted(
+            lineage_totals.items(), key=lambda x: (GROUPS.index(x[0][0]), STAGES.index(x[0][1])))]
 
     milestone_groups: dict[tuple[str, str], list[float]] = defaultdict(list)
     for r in ds.milestones:
@@ -304,7 +443,26 @@ def summarize(ds: Dataset) -> dict[str, list[dict[str, Any]]]:
                    "mean_t_min": mean(times), "sd_t_min": stdev(times) if len(times) > 1 else None}
                   for (group, label), times in sorted(milestone_groups.items())]
 
+    embryo_gates = {eid: _gate_counts(by_emb_nuc[eid], by_emb_lin[eid], gates)
+                    for eid in sorted(active) if active[eid]["group"] != "CONTROL"}
+    gate_rows: list[dict[str, Any]] = []
+    for group in GROUPS:
+        if group == "CONTROL":  # never fluorescence-imaged: gates do not apply
+            continue
+        members = [counts for eid, counts in embryo_gates.items() if active[eid]["group"] == group]
+        for gate in ("detection_recall", "lineage_correct"):
+            threshold = gates.recall_min if gate == "detection_recall" else gates.lineage_min
+            num = sum(m[gate][0] for m in members)
+            den = sum(m[gate][1] for m in members)
+            gate_rows.append({"group": group, "gate": gate, **_gate_row(num, den, threshold),
+                              "n_embryos": sum(1 for m in members if m[gate][1])})
+    gate_embryo_rows = [
+        {"embryo_id": eid, "group": active[eid]["group"], "gate": gate, **_gate_row(*counts[gate])}
+        for eid, counts in embryo_gates.items() for gate in ("detection_recall", "lineage_correct")]
+
     return {"groups": by_group, "embryos": embryos, "stage_qc": stage_rows,
+            "lineage_stage_qc": lineage_stage_rows, "depth_qc": depth_rows,
+            "feasibility_gates": gate_rows, "feasibility_gates_by_embryo": gate_embryo_rows,
             "audited_timeline": sorted(timeline, key=lambda r: (r["embryo_id"], r["volume_index"])),
             "milestones": milestones}
 
@@ -314,9 +472,11 @@ def write_reports(report: dict[str, list[dict[str, Any]]], output_dir: str | Pat
     directory.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
     for name, rows in report.items():
-        if not rows:
-            continue
         path = directory / f"{name}.csv"
+        if not rows:
+            # an older run may have written this table; leaving it would contradict report.json
+            path.unlink(missing_ok=True)
+            continue
         with path.open("w", encoding="utf-8", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
             writer.writeheader()
@@ -331,7 +491,9 @@ def write_reports(report: dict[str, list[dict[str, Any]]], output_dir: str | Pat
         "If input is examples/synthetic, these numbers are FABRICATED for software testing.\n"
         "Rates pooled across audited volumes are technical descriptors; do not use them\n"
         "as independent biological replicates or interpret them as microscope equivalence.\n"
-        "An empty value means not measured or mathematically undefined, not zero.\n",
+        "An empty value means not measured or mathematically undefined, not zero.\n"
+        "Feasibility gate thresholds are provisional internal targets, not diSPIM standards;\n"
+        "'not_evaluable' means no data to judge, never a failure.\n",
         encoding="utf-8",
     )
     written.append(note)

@@ -25,8 +25,8 @@ Copy the header-only CSVs under `data/templates` into a run-specific **private**
 
 ## `nuclei_qc.csv`: one row per independently reviewed 3D volume
 
-- `embryo_id`, `volume_index` (0-based), `t_min` (stage-aligned), `manual_cell_count`, `tp`, `fp`, `fn`, `depth_region` (`all`, `near`, `far`, or another documented code).
-- In each frame, **TP** = paired true nucleus detections, **FP** = automated detections with no matched nucleus, **FN** = manually verified nuclei missed. If `depth_region` is `near`/`far`, those are partitions and should not be combined with a duplicate `all` row for the same frame in pooled calculations. For the starter CLI, use one **`all`** row per `embryo_id,volume_index`. It rejects duplicate frame entries to prevent double counting.
+- `embryo_id`, `volume_index` (0-based), `t_min` (stage-aligned), `manual_cell_count`, `tp`, `fp`, `fn`, `depth_region` (`all`, `near` or `far`; other codes are rejected).
+- In each frame, **TP** = paired true nucleus detections, **FP** = automated detections with no matched nucleus, **FN** = manually verified nuclei missed. If `depth_region` is `near`/`far`, those are partitions of the frame. The key is `embryo_id,volume_index,depth_region`; a frame is given either as one **`all`** row or as a **`near`** plus a **`far`** row (with the same `t_min`), never both. The CLI rejects mixed or incomplete frames to prevent double counting, counts each frame once, and bins its stage by the frame's total `manual_cell_count` (near + far).
 
 ## `lineage_qc.csv`: one row per manually audited division edge
 

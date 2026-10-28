@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "celegans-nsparc-dispim-benchmark"
-version = "0.1.0"
+version = "0.2.0"
 description = "Reproducible descriptive analysis scaffold for a C. elegans NSPARC vs published diSPIM benchmark"
 requires-python = ">=3.10"
 readme = "README.md"
@@ -12,6 +12,7 @@ dependencies = []
 
 [project.optional-dependencies]
 plots = ["matplotlib>=3.8"]
+nd2 = ["nd2>=0.10", "numpy>=1.24"]
 
 [project.scripts]
 celegans-benchmark = "celegans_benchmark.cli:main"
