@@ -250,3 +250,10 @@ Conclusions:
   **Use low power and the 60 s (or 180 s) cadence for embryos, not these settings.**
 - Worms move in and out of the plane, so bleaching and motion are mixed; the fresh-area test is still needed.
 - File names do not match content (`stack_timing4hours` is a 2 h single-plane run): name runs after what they are.
+
+Figures (in [`docs/figures/timelapse_rehearsal_2026-11/`](../figures/timelapse_rehearsal_2026-11/); one folder per run with
+`signal.png`, `montage.png` at the first frame's contrast, and `motion.png` for runs with a TD channel):
+
+![Signal retention across runs](../figures/timelapse_rehearsal_2026-11/comparison.png)
+
+![4 h run: snapshots at 0-240 min](../figures/timelapse_rehearsal_2026-11/Celegans_01_stack_timing4hr-2002/montage.png)
