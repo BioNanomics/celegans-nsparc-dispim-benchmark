@@ -65,12 +65,32 @@ class AnalyzeTimelapseHelpers(unittest.TestCase):
         self.assertIsNone(at.half_time(t, v))
         self.assertIsNone(at.exp_tau(t, np.ones(25)))  # no decay
 
-    def test_shift_between_recovers_translation(self):
+    def test_motion_frac_counts_moved_pixels_not_noise_or_brightness(self):
         rng = np.random.default_rng(1)
-        a = rng.random((64, 64))
-        b = np.roll(np.roll(a, 3, axis=0), -5, axis=1)
-        dy, dx = at.shift_between(b, a)
-        self.assertEqual((dy, dx), (3.0, -5.0))
+        a = rng.normal(1000, 5, (100, 100))
+        b = a + rng.normal(0, 5, a.shape) + 50  # noise + uniform brightness change only
+        self.assertLess(at.motion_frac(a, b), 0.001)
+        c = b.copy()
+        c[10:30, 10:30] += 500  # an object moved into 4% of the field
+        self.assertAlmostEqual(at.motion_frac(a, c), 0.04, delta=0.002)
+
+    def test_mask_turnover(self):
+        a = np.zeros((10, 10), bool)
+        a[0:4, 0:5] = True  # 20 px
+        self.assertEqual(at.mask_turnover(a, a), 0.0)
+        b = np.zeros_like(a)
+        b[6:10, 0:5] = True
+        self.assertEqual(at.mask_turnover(a, b), 1.0)
+        c = np.zeros_like(a)
+        c[2:6, 0:5] = True  # half overlaps: xor 20, union 30
+        self.assertAlmostEqual(at.mask_turnover(a, c), 20 / 30)
+        self.assertIsNone(at.mask_turnover(np.zeros_like(a), np.zeros_like(a)))
+
+    def test_binned_means_ignore_nan_and_last_frame(self):
+        t = np.array([0, 10, 20, 30, 40, 50, 60.0])
+        v = np.array([np.nan, 2, 4, 6, np.nan, 8, 100])
+        self.assertEqual(at.binned(t, v, 30), [(0.0, 3.0), (30.0, 7.0)])
+        self.assertEqual(at.binned(np.array([0, 1.0]), np.array([np.nan, 5.0]), 30), [(0.0, 5.0)])
 
     def test_compare_plot_writes_figure(self):
         with tempfile.TemporaryDirectory() as d:

@@ -251,8 +251,37 @@ Conclusions:
 - Worms move in and out of the plane, so bleaching and motion are mixed; the fresh-area test is still needed.
 - File names do not match content (`stack_timing4hours` is a 2 h single-plane run): name runs after what they are.
 
+### Are the worms distressed? (movement analysis, all six runs)
+
+Two descriptive movement measures (see `scripts/analyze_timelapse.py`): **TD motion** = fraction of transmitted-light
+pixels that change between consecutive frames (3-4 s apart; November runs only), and **60 s mask turnover** =
+1 - overlap of the fluorescent worm masks 60 s apart (all runs; masks, so bleaching does not count as movement).
+Values are 30-min means relative to the first 30 min of the same run.
+
+| Run | Dose | TD motion, last vs first 30 min | 60 s turnover, last vs first 30 min |
+|---|---|---|---|
+| `Celegans_01_stack_timing4hr-2002` (4 h, larvae + adult) | GFP 75.5%, RFP 51.4%, every 4 s | **4%** (0.062 -> 0.003) | RFP 39%, GFP 62% |
+| `Celegans_01_stack_timing4hours` (2 h, adult + larvae) | same | **24%** (0.0063 -> 0.0015) | RFP 86%, GFP 103% |
+| AML18 8 h overnight (many larvae) | mCherry 3%, 41-slice stack every 60 s | no TD channel | **105%** (flat for 8 h) |
+| AML18 1 h | same | no TD channel | 100% |
+
+Conclusions:
+- **High dose (November): movement collapses.** In the 4 h run nearly all larvae are still by 3-4 h; in the 2 h run the
+  adult is essentially still from ~60 min while the larvae beside it keep moving (hence the flat turnover there).
+  Possible bagging (larvae inside the adult) should be checked by eye.
+- **Low dose (October): no sign of movement loss over 8 h**; the movement maps at 0, 4 and 8 h look the same.
+- The two sets differ in more than dose (slide, mount, crowding, single plane vs Z), so this points to the light but does
+  not prove it. A paired exposed-vs-unexposed field on one slide is planned to separate light from mount effects.
+- Turnover saturates for worms that move more than their own width in 60 s, so it detects stopping rather than speed.
+
 Figures (in [`docs/figures/timelapse_rehearsal_2026-11/`](../figures/timelapse_rehearsal_2026-11/); one folder per run with
-`signal.png`, `montage.png` at the first frame's contrast, and `motion.png` for runs with a TD channel):
+`signal.png`, `montage.png` at the first frame's contrast, `movement.png` and `movement_maps.png`):
+
+![Movement across runs](../figures/timelapse_rehearsal_2026-11/comparison_movement.png)
+
+![4 h high-dose run: movement maps at start, middle, end](../figures/timelapse_rehearsal_2026-11/Celegans_01_stack_timing4hr-2002/movement_maps.png)
+
+![8 h low-dose run: movement maps at start, middle, end](../figures/timelapse_rehearsal_2026-11/AML18_rehearsal_timelapse_60s_8h_overnight/movement_maps.png)
 
 ![Signal retention across runs](../figures/timelapse_rehearsal_2026-11/comparison.png)
 

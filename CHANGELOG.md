@@ -8,6 +8,8 @@ Results are always descriptive; no entry here implies biological findings.
 ### Added
 - `scripts/analyze_timelapse.py`: per-frame QC of any ND2 time-lapse (any mix of T, Z, C; Z is max-projected): timing, per-channel signal (p99.9 and background-subtracted foreground), retention at 30/60/120 min, half-time, exponential time constant, transmitted-light movement, montage, and a cross-run `comparison.png`. Tests in `tests/test_analyze_timelapse.py` (skipped without `.[nd2,plots]`).
 - NIS setup sheet: rehearsal results for the 2026-11-03 to 11-10 single-plane worm runs, compared with the 2026-10-23 low-dose run.
+- `analyze_timelapse.py` movement measures: TD motion fraction between consecutive frames and 60 s fluorescent-mask turnover (bleaching-insensitive), 30-min binned in `summary.json`, plus `movement.png`, `movement_maps.png` per run and `comparison_movement.png` across runs. The whole-field drift measure (always zero with static channel walls) was removed.
+- NIS setup sheet: movement ("are the worms distressed?") results for all six rehearsal runs.
 
 ## [0.2.0] - 2026-10-21
 

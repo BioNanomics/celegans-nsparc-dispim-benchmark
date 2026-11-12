@@ -1,18 +1,24 @@
-"""Per-frame QC of ND2 time-lapses: timing, per-channel signal/bleaching, motion, montage.
+"""Per-frame QC of ND2 time-lapses: timing, per-channel signal/bleaching, movement, montage.
 
 Handles any mix of T, Z, C axes (Z is max-projected). The transmitted-light channel
-(name containing "TD" or "DIC") is used only for motion. Outputs go to --out/<file stem>/:
-per_frame.csv, summary.json, signal.png, motion.png, montage.png.
+(name "TD", "DIC", "BF" or "TRANS") is used only for movement. Outputs go to --out/<file stem>/:
+per_frame.csv, summary.json, signal.png, movement.png, movement_maps.png, montage.png.
+
+Movement measures (descriptive; compare a run with its own start, not runs with each other):
+- TD_motion_frac: fraction of transmitted-light pixels that change between consecutive
+  analysed frames by more than 6 robust SDs of the frame difference (needs a TD channel).
+- <channel>_turnover_60s: 1 - overlap of the fluorescent worm masks ~60 s apart
+  (|A xor B| / |A or B|). Uses masks, not intensities, so bleaching is not counted as movement.
 
 Usage:
-    python scripts/analyze_timelapse.py --out D:/.../analysis file1.nd2 [file2.nd2 ...]
+    python scripts/analyze_timelapse.py --out results/timelapse_analysis file1.nd2 [file2.nd2 ...]
 """
 from __future__ import annotations
 
 import argparse
+import collections
 import csv
 import json
-import statistics
 from pathlib import Path
 
 import numpy as np
@@ -24,6 +30,9 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 TRANS_NAMES = ("TD", "DIC", "BF", "TRANS")
 FG_K = 6.0  # foreground = pixels above median + FG_K * MAD (per frame, per channel)
+MOTION_K = 6.0  # TD pixel "moved" if |frame difference| > MOTION_K robust SDs
+TURNOVER_GAP_S = 60.0
+BIN_MIN = 30.0
 
 
 def channel_names(f: nd2.ND2File) -> list[str]:
@@ -60,10 +69,23 @@ def as_cyx(frame: np.ndarray, axes: list[str]) -> np.ndarray:
     return a
 
 
-def fg_stats(img: np.ndarray) -> tuple[float, float, float, float, float]:
-    x = img.astype(np.float32).ravel()
+def _bg_mad(x: np.ndarray) -> tuple[float, float]:
     bg = float(np.median(x))
     mad = float(np.median(np.abs(x - bg))) or 1.0
+    return bg, mad
+
+
+def fg_mask(img: np.ndarray) -> np.ndarray:
+    """Foreground (worm) pixels: above median + FG_K * MAD."""
+    x = img.astype(np.float32)
+    bg, mad = _bg_mad(x)
+    return x > bg + FG_K * mad
+
+
+def fg_stats(img: np.ndarray) -> tuple[float, float, float, float, float]:
+    """(p99.9, background median, fg mean - bg, fg area fraction, fg integrated - bg)."""
+    x = img.astype(np.float32).ravel()
+    bg, mad = _bg_mad(x)
     mask = x > bg + FG_K * mad
     p999 = float(np.percentile(x, 99.9))
     if mask.any():
@@ -74,16 +96,35 @@ def fg_stats(img: np.ndarray) -> tuple[float, float, float, float, float]:
     return p999, bg, fg, float(mask.mean()), integ
 
 
-def shift_between(a: np.ndarray, b: np.ndarray) -> tuple[float, float]:
-    """Translation (dy, dx) of b relative to a by phase correlation."""
-    a = a - a.mean()
-    b = b - b.mean()
-    r = np.fft.fft2(a) * np.conj(np.fft.fft2(b))
-    r /= np.abs(r) + 1e-9
-    c = np.abs(np.fft.ifft2(r))
-    dy, dx = np.unravel_index(np.argmax(c), c.shape)
-    h, w = c.shape
-    return float(dy - h if dy > h // 2 else dy), float(dx - w if dx > w // 2 else dx)
+def motion_frac(a: np.ndarray, b: np.ndarray) -> float:
+    """Fraction of pixels whose change from a to b exceeds MOTION_K robust SDs of the difference."""
+    df = b.astype(np.float32) - a.astype(np.float32)
+    df -= np.median(df)  # ignore a uniform brightness change
+    sd = 1.4826 * float(np.median(np.abs(df))) + 1e-6
+    return float((np.abs(df) > MOTION_K * sd).mean())
+
+
+def mask_turnover(a: np.ndarray, b: np.ndarray) -> float | None:
+    """|A xor B| / |A or B|: 0 = same pixels, 1 = no overlap. None if both masks empty."""
+    union = int(np.logical_or(a, b).sum())
+    if union == 0:
+        return None
+    return float(np.logical_xor(a, b).sum() / union)
+
+
+def binned(t_min: np.ndarray, vals: np.ndarray, width: float = BIN_MIN) -> list[tuple[float, float]]:
+    """Mean of vals in consecutive time bins [s, s+width) starting at 0; NaNs ignored.
+
+    A trailing bin covering < 25% of `width` (e.g. only the final frame) is dropped."""
+    out = []
+    end = t_min[-1] if len(t_min) else 0.0
+    for s in np.arange(0, max(end, 1e-9), width):
+        if s > 0 and min(s + width, end) - s < 0.25 * width:
+            continue
+        m = (t_min >= s) & (t_min < s + width) & ~np.isnan(vals)
+        if m.any():
+            out.append((float(s), float(np.mean(vals[m]))))
+    return out
 
 
 def retention(t_min: np.ndarray, v: np.ndarray, at_min: float) -> float | None:
@@ -97,7 +138,6 @@ def retention(t_min: np.ndarray, v: np.ndarray, at_min: float) -> float | None:
 
 def half_time(t_min: np.ndarray, v: np.ndarray) -> float | None:
     start = np.mean(v[:5])
-    # smooth over ~5 frames to avoid single noisy frames
     k = 5
     if len(v) < k:
         return None
@@ -113,6 +153,10 @@ def exp_tau(t_min: np.ndarray, v: np.ndarray) -> float | None:
         return None
     slope = np.polyfit(t_min[ok], np.log(v[ok]), 1)[0]
     return float(-1 / slope) if slope < 0 else None
+
+
+def _col(rows: list[dict], key: str) -> np.ndarray:
+    return np.array([np.nan if r.get(key, "") in ("", None) else float(r[key]) for r in rows])
 
 
 def analyze(path: Path, out_root: Path, step: int) -> dict:
@@ -142,12 +186,20 @@ def analyze(path: Path, out_root: Path, step: int) -> dict:
         idx = list(range(0, n_t, step))
         if idx[-1] != n_t - 1:
             idx.append(n_t - 1)
+        dt_med = float(np.median(np.diff(times))) if n_t > 1 else TURNOVER_GAP_S
+        dt_an = dt_med * step
+        gap = max(1, int(round(TURNOVER_GAP_S / dt_an)))  # analysed frames ~60 s apart
+        win = max(5, int(round(60 / dt_an)))  # movement-map window: >= 1 min and >= 5 frames
+        map_src = trans[0] if trans else (fluor[0] if fluor else 0)
+        win_starts = sorted({0, max(0, len(idx) // 2 - win // 2), max(0, len(idx) - win)})
+        win_frames: dict[int, list] = {s: [] for s in win_starts}
+        masks = {c: collections.deque(maxlen=gap + 1) for c in fluor}
+
         rows = []
         prev_td = None
-        drift_y = drift_x = 0.0
         montage_ts = sorted({idx[int(round(q * (len(idx) - 1)))] for q in (0, 0.25, 0.5, 0.75, 1)})
         montage = {}
-        for t in idx:
+        for k, t in enumerate(idx):
             fr = as_cyx(data[t] if data is not None else f.asarray(), axes)
             row = {"t_index": t, "time_s": round(float(times[t] - times[0]), 3)}
             for c in fluor:
@@ -155,17 +207,19 @@ def analyze(path: Path, out_root: Path, step: int) -> dict:
                 n = names[c]
                 row.update({f"{n}_p99_9": p, f"{n}_bg_median": bg, f"{n}_fg_mean_minus_bg": fg,
                             f"{n}_fg_area_frac": area, f"{n}_fg_integrated": integ})
+                masks[c].append(fg_mask(fr[c]))
+                tv = mask_turnover(masks[c][0], masks[c][-1]) if len(masks[c]) == gap + 1 else None
+                row[f"{n}_turnover_60s"] = "" if tv is None else tv
             if trans:
-                td = fr[trans[0]][::4, ::4].astype(np.float32)
-                if prev_td is not None:
-                    row["TD_activity"] = float(np.mean(np.abs(td - prev_td)) / (np.mean(prev_td) + 1e-9))
-                    dy, dx = shift_between(prev_td, td)
-                    drift_y += dy * 4 * vx.y
-                    drift_x += dx * 4 * vx.x
-                else:
-                    row["TD_activity"] = ""
-                row["TD_drift_y_um"], row["TD_drift_x_um"] = round(drift_y, 2), round(drift_x, 2)
+                td = fr[trans[0]].astype(np.float32)
+                row["TD_motion_frac"] = motion_frac(prev_td, td) if prev_td is not None else ""
                 prev_td = td
+            for s in win_starts:
+                if s <= k < s + win:
+                    img = fr[map_src].astype(np.float32)
+                    if not trans:  # fluorescence: normalise so bleaching does not look like motion
+                        img /= max(float(np.percentile(img, 99.9)), 1.0)
+                    win_frames[s].append((t, img))
             rows.append(row)
             if t in montage_ts:
                 montage[t] = fr
@@ -195,7 +249,7 @@ def analyze(path: Path, out_root: Path, step: int) -> dict:
         n = names[c]
         entry = {}
         for metric in ("p99_9", "fg_mean_minus_bg"):
-            v = np.array([r[f"{n}_{metric}"] for r in rows], dtype=float)
+            v = _col(rows, f"{n}_{metric}")
             entry[metric] = {
                 "start": round(float(np.mean(v[:5])), 1),
                 "end": round(float(np.mean(v[-5:])), 1),
@@ -206,23 +260,25 @@ def analyze(path: Path, out_root: Path, step: int) -> dict:
                 "half_time_min": half_time(t_min, v),
                 "exp_tau_min": exp_tau(t_min, v),
             }
-        a = np.array([r[f"{n}_fg_area_frac"] for r in rows], dtype=float)
+        a = _col(rows, f"{n}_fg_area_frac")
         entry["fg_area_frac_start_end"] = [round(float(a[:5].mean()), 4), round(float(a[-5:].mean()), 4)]
         ch_summary[n] = entry
-    motion = {}
-    if trans:
-        act = np.array([r["TD_activity"] for r in rows[1:]], dtype=float)
-        motion = {
-            "TD_activity_median": round(float(np.median(act)), 4) if act.size else None,
-            "TD_activity_p95": round(float(np.percentile(act, 95)), 4) if act.size else None,
-            "net_drift_um": [rows[-1]["TD_drift_y_um"], rows[-1]["TD_drift_x_um"]],
-            "note": "activity = mean |frame diff| / mean intensity between analysed frames; "
-                    "drift = summed whole-field phase-correlation shift (worms moving, not stage).",
+
+    movement = {"bin_min": BIN_MIN, "turnover_gap_s": round(gap * dt_an, 1), "measures": {}}
+    move_keys = (["TD_motion_frac"] if trans else []) + [f"{names[c]}_turnover_60s" for c in fluor]
+    for key in move_keys:
+        b = binned(t_min, _col(rows, key))
+        if not b:
+            continue
+        first, last = b[0][1], b[-1][1]
+        movement["measures"][key] = {
+            "bins": [{"start_min": s, "mean": round(m, 5)} for s, m in b],
+            "last_over_first": round(last / first, 3) if first > 0 and len(b) > 1 else None,
         }
     summary = {
         "file": str(path), "sizes": sizes, "channels": names, "objective": objective,
         "pixel_um": round(vx.x, 4), "frame_step_analysed": step, "settings": laser,
-        "timing": timing, "signal": ch_summary, "motion": motion,
+        "timing": timing, "signal": ch_summary, "movement": movement,
         "foreground_rule": f"pixel > median + {FG_K} * MAD, per frame and channel",
     }
     (out / "summary.json").write_text(json.dumps(summary, indent=2))
@@ -233,7 +289,7 @@ def analyze(path: Path, out_root: Path, step: int) -> dict:
         n = names[c]
         for ax, metric, title in ((axs[0], "p99_9", "Brightest 0.1% (p99.9)"),
                                    (axs[1], "fg_mean_minus_bg", "Worm signal (fg mean - bg)")):
-            v = np.array([r[f"{n}_{metric}"] for r in rows], dtype=float)
+            v = _col(rows, f"{n}_{metric}")
             ax.plot(t_min, v / np.mean(v[:5]), label=n, lw=1)
             ax.set_title(title)
     for ax in axs:
@@ -247,18 +303,48 @@ def analyze(path: Path, out_root: Path, step: int) -> dict:
     fig.savefig(out / "signal.png", dpi=110)
     plt.close(fig)
 
-    if trans:
-        fig, axs = plt.subplots(1, 2, figsize=(11, 3.5))
-        axs[0].plot(t_min[1:], [r["TD_activity"] for r in rows[1:]], lw=0.6)
-        axs[0].set_title("Movement between frames (TD)")
-        axs[0].set_xlabel("time (min)")
-        axs[1].plot(t_min, [r["TD_drift_x_um"] for r in rows], label="x")
-        axs[1].plot(t_min, [r["TD_drift_y_um"] for r in rows], label="y")
-        axs[1].set_title("Cumulative whole-field shift (µm)")
-        axs[1].set_xlabel("time (min)")
-        axs[1].legend()
+    if movement["measures"]:
+        keys_present = list(movement["measures"])
+        fig, axs = plt.subplots(1, len(keys_present), figsize=(5.5 * len(keys_present), 3.6), squeeze=False)
+        for ax, key in zip(axs[0], keys_present):
+            v = _col(rows, key)
+            ok = ~np.isnan(v)
+            ax.plot(t_min[ok], v[ok], lw=0.5, alpha=0.5, color="grey", label="per frame")
+            b = movement["measures"][key]["bins"]
+            ax.step([x["start_min"] for x in b] + [b[-1]["start_min"] + BIN_MIN],
+                    [x["mean"] for x in b] + [b[-1]["mean"]], where="post", color="C3", lw=2,
+                    label=f"{BIN_MIN:.0f}-min mean")
+            ax.set_title(key.replace("_", " "))
+            ax.set_xlabel("time (min)")
+            ax.set_ylim(bottom=0)
+            ax.legend(fontsize=8)
+        fig.suptitle(f"{path.name}: movement (higher = more moving)", fontsize=9)
         fig.tight_layout()
-        fig.savefig(out / "motion.png", dpi=110)
+        fig.savefig(out / "movement.png", dpi=110)
+        plt.close(fig)
+
+    # movement maps: first frame of each window (top) and SD over the window (bottom, bright = moving)
+    wins = [s for s in win_starts if len(win_frames[s]) >= 2]
+    if wins:
+        sds = {s: np.stack([im for _, im in win_frames[s]]).std(0) for s in wins}
+        vmax = float(np.percentile(sds[wins[0]], 99.5)) or 1.0
+        h, w_ = sds[wins[0]].shape
+        fig, axs = plt.subplots(2, len(wins), figsize=(4.2 * len(wins), 2 * 4.2 * h / w_ + 0.8), squeeze=False)
+        for j, s in enumerate(wins):
+            t0, first = win_frames[s][0]
+            t1 = win_frames[s][-1][0]
+            lo, hi = np.percentile(first, [1, 99.5])
+            axs[0, j].imshow(first, cmap="gray", vmin=lo, vmax=hi)
+            axs[0, j].set_title(f"{names[map_src]} at {(times[t0] - times[0]) / 60:.0f} min", fontsize=9)
+            axs[1, j].imshow(sds[s], cmap="magma", vmin=0, vmax=vmax)
+            axs[1, j].set_title(f"movement {(times[t0] - times[0]) / 60:.0f}-{(times[t1] - times[0]) / 60:.0f} min",
+                                fontsize=9)
+            for ax in axs[:, j]:
+                ax.set_xticks([])
+                ax.set_yticks([])
+        fig.suptitle(f"{path.name}: bottom = SD over window, same scale (bright = moving)", fontsize=9)
+        fig.tight_layout()
+        fig.savefig(out / "movement_maps.png", dpi=90)
         plt.close(fig)
 
     ts = sorted(montage)
@@ -310,6 +396,33 @@ def compare_plot(out_root: Path, summaries: list[dict]) -> None:
     plt.close(fig)
 
 
+def compare_movement_plot(out_root: Path, summaries: list[dict]) -> None:
+    """Overlay 60 s mask turnover (30-min means, fraction of first bin) for every run."""
+    fig, ax = plt.subplots(figsize=(9, 4.5))
+    drawn = False
+    for s in summaries:
+        stem = Path(s["file"]).stem
+        for key, m in s.get("movement", {}).get("measures", {}).items():
+            if not key.endswith("_turnover_60s") or len(m["bins"]) < 2 or m["bins"][0]["mean"] <= 0:
+                continue
+            x = [b["start_min"] + BIN_MIN / 2 for b in m["bins"]]
+            y = [b["mean"] / m["bins"][0]["mean"] for b in m["bins"]]
+            ax.plot(x, y, marker="o", ms=3, lw=1.2, label=f"{stem} | {key.split('_')[0]}")
+            drawn = True
+    if not drawn:
+        plt.close(fig)
+        return
+    ax.axhline(1, color="grey", ls=":", lw=0.8)
+    ax.set_xlabel("time (min, centre of 30-min bin)")
+    ax.set_ylabel("movement, fraction of first 30 min")
+    ax.set_ylim(bottom=0)
+    ax.set_title("Worm movement across runs (60 s fluorescent-mask turnover)")
+    ax.legend(fontsize=7, loc="upper right")
+    fig.tight_layout()
+    fig.savefig(out_root / "comparison_movement.png", dpi=110)
+    plt.close(fig)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("files", nargs="+", type=Path)
@@ -325,6 +438,7 @@ def main() -> None:
             print(f"FAILED {p.name}: {e}", flush=True)
     (a.out / "all_summaries.json").write_text(json.dumps(allsum, indent=2))
     compare_plot(a.out, allsum)
+    compare_movement_plot(a.out, allsum)
 
 
 if __name__ == "__main__":

@@ -89,7 +89,7 @@ After an acquisition, check the time-lapse itself (needs the optional extra `pip
 python -m celegans_benchmark run-check --nd2 D:\raw\embryo01.nd2 --planned-interval 60 --out D:\private\run1\run_check
 ```
 
-For multi-channel or single-plane time-lapses (which `run-check` does not accept), `scripts/analyze_timelapse.py` (needs `pip install -e ".[nd2,plots]"`) reports timing, per-channel signal and bleaching (retention, half-time), movement in the transmitted-light channel and a montage per file, plus a `comparison.png` across files:
+For multi-channel or single-plane time-lapses (which `run-check` does not accept), `scripts/analyze_timelapse.py` (needs `pip install -e ".[nd2,plots]"`) reports timing, per-channel signal and bleaching (retention, half-time), worm movement (transmitted-light motion and 60 s fluorescent-mask turnover, with movement maps) and a montage per file, plus `comparison.png` and `comparison_movement.png` across files:
 
 ```bash
 python scripts/analyze_timelapse.py --out results/timelapse_analysis D:\raw\run1.nd2 D:\raw\run2.nd2
