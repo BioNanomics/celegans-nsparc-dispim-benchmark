@@ -227,3 +227,26 @@ Incidents and fixes:
   **Every run: press Reset in the Z tab and set Top/Bottom on the sample; check Relative Positions before Run.**
 - Turn room lights off before a run and keep conditions constant for the whole run.
 - Next: fresh-area test (bleaching vs sample change), a 180 s overnight comparison on a fresh slide, and one stack at 60x oil.
+
+## Rehearsal results: 2026-11-03 to 11-10 (worms, NOT study data)
+
+Free-moving adult worms and larvae (no embryos), 10x NA 0.45, 3 channels (GFP 75.5%, RFP 51.4% or 34.8%, TD),
+**single plane, no Z**, PFS on. Analysed with `scripts/analyze_timelapse.py` (every frame; outputs in
+`results/timelapse_analysis/`, not in git). "Signal" = mean of worm pixels minus background
+(pixel > median + 6 MAD), as a fraction of the first 5 frames.
+
+| Run | Frames / interval | GFP signal left | RFP signal left | Time to 50% |
+|---|---|---|---|---|
+| `Celegans_01_stack_timing1111` (10 min) | 151 at 4.00 s, 0 late | 63% at 10 min | 59% at 10 min | - |
+| `Celegans_01_stack_timing4hours` (actually **2 h**) | 1801 at 4.00 s, 0 late | 40% at 1 h, 29% at 2 h | 65% at 1 h, 62% at 2 h | GFP 32 min |
+| `Celegans_01_stack_timing4hr-2002` (4 h) | 3601 at 4.00 s, 0 late | 27% at 1 h, **10% at 4 h** | 60% at 1 h, 26% at 4 h | GFP 27 min, RFP 80 min |
+| AML18 8 h overnight (above, for comparison) | 481 stacks at 60 s | - | mCherry 93% at 2 h, 65% at 8 h | not reached |
+
+Conclusions:
+- Timing was exact on every run (no late or missing frames).
+- At these powers and a 4 s cadence, GFP halves in ~30 min; the brightest pixels fall to 2% by 4 h and the GFP-positive
+  area from 17% to 3% of the field. RFP is more robust than GFP under the same imaging.
+- The 3% / 60 s Z-stack settings of 2026-10-23 retain far more signal per hour while imaging 41 planes per time point.
+  **Use low power and the 60 s (or 180 s) cadence for embryos, not these settings.**
+- Worms move in and out of the plane, so bleaching and motion are mixed; the fresh-area test is still needed.
+- File names do not match content (`stack_timing4hours` is a 2 h single-plane run): name runs after what they are.

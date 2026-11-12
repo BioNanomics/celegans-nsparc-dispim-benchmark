@@ -3,6 +3,12 @@
 All notable changes to the analysis scaffold. Versions follow semantic versioning.
 Results are always descriptive; no entry here implies biological findings.
 
+## [Unreleased]
+
+### Added
+- `scripts/analyze_timelapse.py`: per-frame QC of any ND2 time-lapse (any mix of T, Z, C; Z is max-projected): timing, per-channel signal (p99.9 and background-subtracted foreground), retention at 30/60/120 min, half-time, exponential time constant, transmitted-light movement, montage, and a cross-run `comparison.png`. Tests in `tests/test_analyze_timelapse.py` (skipped without `.[nd2,plots]`).
+- NIS setup sheet: rehearsal results for the 2026-11-03 to 11-10 single-plane worm runs, compared with the 2026-10-23 low-dose run.
+
 ## [0.2.0] - 2026-10-21
 
 ### Added

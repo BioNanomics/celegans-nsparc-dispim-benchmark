@@ -89,6 +89,12 @@ After an acquisition, check the time-lapse itself (needs the optional extra `pip
 python -m celegans_benchmark run-check --nd2 D:\raw\embryo01.nd2 --planned-interval 60 --out D:\private\run1\run_check
 ```
 
+For multi-channel or single-plane time-lapses (which `run-check` does not accept), `scripts/analyze_timelapse.py` (needs `pip install -e ".[nd2,plots]"`) reports timing, per-channel signal and bleaching (retention, half-time), movement in the transmitted-light channel and a montage per file, plus a `comparison.png` across files:
+
+```bash
+python scripts/analyze_timelapse.py --out results/timelapse_analysis D:\raw\run1.nd2 D:\raw\run2.nd2
+```
+
 `scripts/fiji_fading_curve.ijm` is a Fiji macro (Plugins > Macros > Run) that plots signal over time from the max projection of an ND2 time-lapse, for checking the same file visually.
 
 `select-frames` and `check-audit` assume the tracker numbers its time points from 0. Check how your tracker numbers them: if the first one is 1, add `--first-time-point 1`. `volume_index` in `nuclei_qc.csv` is always 0-based. `check-audit` exits 1 on a mismatch, which means a counting slip or the wrong frame: recount, don't adjust.
