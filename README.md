@@ -29,6 +29,7 @@ The study ends with an answer to: *How far into embryogenesis can NSPARC recover
 
 ## What this repository contains
 
+- **[Manuscript draft (PDF)](docs/manuscript.pdf)**: built automatically from [`docs/paper/main.tex`](docs/paper/main.tex), which is synced from Overleaf (edit in Overleaf, not here)
 - [Brief for lab manager](docs/LAB_MANAGER_BRIEF.md)
 - [Step-by-step experimental protocol](docs/PROTOCOL.md)
 - [Published benchmarks and downloadable atlas resources](docs/BASELINES.md)
