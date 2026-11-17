@@ -1,0 +1,71 @@
+name: Sync paper from Overleaf
+
+# Nightly (and on demand): pulls the Overleaf project into docs/paper/ (git subtree)
+# and, if it changed, rebuilds docs/manuscript.pdf in the same run.
+# Requires the repository secret OVERLEAF_GIT_TOKEN (an Overleaf Git authentication token).
+# Scheduled runs use the default branch; edit the paper in Overleaf only, never in docs/paper/.
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # every day at 02:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: overleaf-sync
+  cancel-in-progress: false
+
+env:
+  OVERLEAF_PROJECT: 6ad7e422f1237323debd7494
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # git subtree needs history to find the previous sync
+
+      - name: Check token
+        env:
+          TOKEN: ${{ secrets.OVERLEAF_GIT_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::Repository secret OVERLEAF_GIT_TOKEN is not set"
+            exit 1
+          fi
+
+      - name: Pull from Overleaf
+        id: pull
+        env:
+          TOKEN: ${{ secrets.OVERLEAF_GIT_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          before=$(git rev-parse HEAD)
+          git subtree pull --prefix=docs/paper \
+            "https://git:${TOKEN}@git.overleaf.com/${OVERLEAF_PROJECT}" main \
+            --squash -m "docs: sync manuscript from Overleaf"
+          if [ "$(git rev-parse HEAD)" = "$before" ]; then
+            echo "No changes in Overleaf"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compile LaTeX
+        if: steps.pull.outputs.changed == 'true'
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: main.tex
+          working_directory: docs/paper
+
+      - name: Commit PDF and push
+        if: steps.pull.outputs.changed == 'true'
+        run: |
+          cp docs/paper/main.pdf docs/manuscript.pdf
+          git add docs/manuscript.pdf
+          git diff --cached --quiet || git commit -m "docs: rebuild manuscript PDF [skip ci]"
+          git push
