@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 from .metrics import (DEFAULT_INTERVAL_TOLERANCE, STAGES, DataError, Gates, load_data,
                       plot_audited_timeline, stage_of, summarize, write_reports)
 from . import __version__
 from .audit import check_audit, read_spot_counts, select_frames, write_selection
-from .checksum import sha256_file, verify_raw
+from .checksum import sha256_file, verify_manifest, verify_raw, write_raw_manifest
 from .provenance import build_run_info, write_run_info
 from .runcheck import check_run, read_nd2_run, signal_trend, write_run_check
 from .runfolder import init_run
@@ -45,10 +46,16 @@ def main(argv: list[str] | None = None) -> int:
     init = sub.add_parser("init-run", help="Create a run folder with empty template CSVs (never overwrites)")
     init.add_argument("--run-dir", required=True, help="Private folder to create/fill (keep outside public Git)")
     init.add_argument("--templates-dir", help="Template CSV folder (default: data/templates in the repo)")
-    checksum = sub.add_parser("checksum", help="Print the SHA-256 of a (large) file")
-    checksum.add_argument("--file", required=True)
-    verify = sub.add_parser("verify-raw", help="Check raw_sha256 in acquisitions.csv against the files")
-    verify.add_argument("--data-dir", required=True)
+    checksum = sub.add_parser("checksum", help="Hash a file or create an ND2 checksum manifest")
+    sources = checksum.add_mutually_exclusive_group(required=True)
+    sources.add_argument("--file", help="File to checksum")
+    sources.add_argument("--directory", action="append", help="Folder of ND2 files; repeat for more folders")
+    checksum.add_argument("--recursive", action="store_true", help="Include subfolders of --directory")
+    checksum.add_argument("--manifest", help="New CSV manifest to create without overwriting")
+    verify = sub.add_parser("verify-raw", help="Check an acquisition table or standalone checksum manifest")
+    baseline = verify.add_mutually_exclusive_group(required=True)
+    baseline.add_argument("--data-dir", help="Folder containing acquisitions.csv")
+    baseline.add_argument("--manifest", help="Checksum CSV created by the checksum command")
     verify.add_argument("--raw-root", help="Folder for relative raw_data_uri values")
     rc = sub.add_parser("run-check",
                         help="Check an ND2 time-lapse: interval, late/missing stacks, stack time, signal")
@@ -130,9 +137,38 @@ def main(argv: list[str] | None = None) -> int:
                   "Stages are estimated from tracker spots, not manual counts.")
             return 0
         if args.command == "checksum":
+            if args.recursive and not args.directory:
+                parser.error("--recursive requires --directory")
+            if args.directory:
+                if not args.manifest:
+                    parser.error("--directory requires --manifest")
+                paths = []
+                for value in args.directory:
+                    folder = Path(value)
+                    if not folder.is_dir():
+                        raise DataError(f"Not a directory: {folder}")
+                    candidates = folder.rglob("*") if args.recursive else folder.iterdir()
+                    paths.extend(p for p in candidates if p.is_file() and p.suffix.lower() == ".nd2")
+            else:
+                paths = [Path(args.file)]
+            if args.manifest:
+                rows = write_raw_manifest(paths, args.manifest,
+                                          progress=lambda text: print(text, file=sys.stderr, flush=True))
+                print(f"Wrote {args.manifest}: {len(rows)} file(s), "
+                      f"{sum(int(row['size_bytes']) for row in rows):,} bytes")
+                return 0
             print(f"{sha256_file(args.file)}  {args.file}")
             return 0
         if args.command == "verify-raw":
+            if args.manifest:
+                results = verify_manifest(args.manifest, args.raw_root)
+                for row in results:
+                    print(f"{row['raw_data_uri']}: {row['status']}", flush=True)
+                    if row["error"]:
+                        print(row["error"], file=sys.stderr)
+                verified = sum(row["status"] == "ok" for row in results)
+                print(f"{verified}/{len(results)} file(s) verified")
+                return 0 if verified == len(results) else 1
             results = verify_raw(args.data_dir, args.raw_root)
             for r in results:
                 print(f"{r['embryo_id']}: {r['status']}")

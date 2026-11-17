@@ -69,6 +69,12 @@ python -m celegans_benchmark checksum --file D:\raw\embryo01.nd2
 # Compare recorded checksums with the files (blank values are "not recorded", not failures)
 python -m celegans_benchmark verify-raw --data-dir D:\private\run1 --raw-root D:\raw
 
+# Inventory all ND2 files in a folder at their current locations (PowerShell)
+python -m celegans_benchmark checksum --directory 'D:\Qurratul_Celegans\TimelapsePath' --manifest data/manifests/nd2_sha256_2026-11-17.csv
+
+# Re-read every file and compare its size and SHA-256 with the manifest
+python -m celegans_benchmark verify-raw --manifest data/manifests/nd2_sha256_2026-11-17.csv
+
 # Choose audit frames per stage BEFORE reviewing any results (fixed seed; list is never overwritten).
 # Input: a time_point,spots file exported from the tracker. Record the printed SHA-256.
 python -m celegans_benchmark select-frames --spot-counts D:\private\run1\E01_spots.csv --output D:\private\run1\E01_audit_frames.csv --per-stage 2 --seed 20261022
@@ -76,6 +82,28 @@ python -m celegans_benchmark select-frames --spot-counts D:\private\run1\E01_spo
 # After counting: check that tp+fp of each audited frame matches the tracker's spot count
 python -m celegans_benchmark check-audit --data-dir D:\private\run1 --embryo-id E01 --spot-counts D:\private\run1\E01_spots.csv
 ```
+
+`checksum --directory` creates a standalone raw-file inventory with the absolute path,
+byte size, modification time, SHA-256, and checksum time in UTC. It includes `.nd2`
+files directly inside the folder. Add `--recursive` to include subfolders, or repeat
+`--directory` for several locations. `checksum --file` continues to print a single
+hash and can also write a one-file inventory with `--manifest`.
+
+Each file is read in bounded chunks and checked for changes during hashing. The
+manifest is published after all files pass and their metadata is checked again.
+Choose a new manifest filename for each snapshot; an existing baseline is preserved.
+A checksum records file integrity at that time. Confirm ND2 readability and
+acquisition completion separately.
+
+`verify-raw --manifest` requires a valid size and hash for every row and exits `1`
+if any file is missing, differs, changes during the read, or cannot be checked.
+Relative paths in a standalone manifest use its containing folder, or `--raw-root`
+when supplied. The earlier `--data-dir` behavior for embryo acquisition tables is
+preserved, including its `not_recorded` and skipped statuses.
+
+The November 17 manifest covers the 17 existing files in `TimelapsePath`, including
+rehearsals and setup captures. It is a file inventory without embryo assignments.
+The raw ND2 files remain at their recorded paths on the microscope PC.
 
 `validate` and `report` print `WARNING` lines (exit code unchanged) when an imaged embryo has a blank `power_at_sample_mw`, `raw_sha256` or `nsparc_mode`, or when `measured_interval_s` is slower than `planned_interval_s` by more than `--interval-tolerance` (default 0.05 = 5%).
 
