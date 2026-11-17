@@ -41,6 +41,20 @@ The study ends with an answer to: *How far into embryogenesis can NSPARC recover
 - [`src/celegans_benchmark/`](src/celegans_benchmark/) — dependency-free CSV validation, descriptive metrics, and optional figures
 - [`tests/`](tests/) and GitHub Actions CI
 
+Figure PNGs under `docs/figures/` and the generated `docs/manuscript.pdf` use
+Git LFS. After cloning, install Git LFS and retrieve the assets:
+
+```bash
+git lfs install
+git lfs pull
+```
+
+The PDF build workflows enable LFS during checkout so generated PDFs are stored
+and uploaded through LFS. The Overleaf source stays in `docs/paper/`. LFS applies
+from the conversion forward; earlier commits retain their original binary blobs.
+Raw ND2 locations and SHA-256 checksums are recorded in
+[`data/manifests/nd2_sha256_2026-11-17.csv`](data/manifests/nd2_sha256_2026-11-17.csv).
+
 ## Get started
 
 1. Review the scientific protocol with the *C. elegans* lab manager; verify the available nuclear reporter strain and instrument capabilities.

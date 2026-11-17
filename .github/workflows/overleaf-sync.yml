@@ -27,6 +27,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0   # git subtree needs history to find the previous sync
+          lfs: true
 
       - name: Check token
         env:
