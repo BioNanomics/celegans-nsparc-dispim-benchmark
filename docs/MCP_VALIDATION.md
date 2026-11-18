@@ -139,6 +139,56 @@ The XY and objective readbacks match the end state recorded above. Z device 0
 read 2584.58 µm, compared with the earlier 2584.70 µm. This check does not
 explain that difference or establish focus.
 
+## Single capture with current settings
+
+At **15:25:16 EST** a single test capture was taken through the `nis` MCP
+registration using the acquisition settings already active in NIS. No
+configuration, preset, laser, gain, pinhole, resolution, illumination,
+objective, stage or focus setting was selected or changed. No Live view or ND
+experiment was started, and the e-stop was not changed.
+
+Fresh pre-capture checks reported: e-stop released, ND inactive and capture
+state idle. The objective was **PLAN APO λD 10x OFN25 DIC N1**, and the camera
+was `Nikon_Confocal_Ax`. XY was (3530.5, 304.1) µm and Z device 0 was
+2584.58 µm. Light path port 3 was selected. DIA LED, AX and D-LEDI shutters
+read closed, the DIC analyzer was out and Perfect Focus was off (out of range).
+The active optical-configuration names were blank (raw `rc=0`), so the
+acquisition configuration used is **not identified** by the server.
+
+`capture` was called once with `include_stats=false`. It returned `running`,
+and the same `capture_id` was polled with `capture_status` until it completed.
+No second capture was issued.
+
+| Phase | Time |
+|---|---|
+| Queue wait | 0.015 s |
+| Acquire | **140.032 s** |
+| Save | 0.172 s |
+| Close | 0.296 s |
+| Total | **140.515 s** |
+
+Raw `rc_capture`, `rc_save` and `rc_close` were all 0, and `saved` was true.
+The completion readback of the imaging state was unchanged from the
+pre-capture check.
+
+`claude_test_20261118_152516.nd2`
+
+- Size: **25,358,336 bytes**.
+- SHA-256: `43d841230f0cf693353f62d9fccaf03ad80a0d9c6d15be980c5586232db4dd20`.
+- Opened offline with `nd2` 0.11.3, the reader the project already uses.
+- Dimensions: **C=3, Y=2048, X=2048**, `uint16`, with no time or Z series.
+- Channels: **GFP, RFP, TD**.
+- Pixel size: **0.378 µm**.
+- Pixel values spanned only **0–58 counts** across all channels. The file is
+  readable, but it shows no evidence of specimen signal, focus or useful
+  exposure. The shutter readbacks before and after capture do not establish
+  whether illumination was delivered during the scan.
+
+The 140-second acquisition of one 2048×2048 frame agrees with the
+[NSPARC CF validation](MCP_NSPARC_VALIDATION.md): a scan exceeded a 90-second
+phase there. At these settings one frame takes longer than the study's planned
+60-second interval. This capture is a software check, not study data.
+
 ## Future study checks and analysis
 
 Before any further hardware action, repeat fresh `status` and `imaging_status`
