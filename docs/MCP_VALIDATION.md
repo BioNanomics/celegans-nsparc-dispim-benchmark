@@ -474,8 +474,8 @@ The live server file remains the 0.9.1 source (SHA-256 unchanged).
 
 ### 0.10.0 microscope checks (dry)
 
-0.10.0 was deployed to the live server at about 16:20 EST (`initialize`
-reported 0.10.0) with the operator present, the sample seated and no ND run.
+0.10.0 was deployed to the live server before step 4's e-stop at 16:27:47 EST
+(`initialize` reported 0.10.0) with the operator present, the sample seated and no ND run.
 XY stayed (3530.5, 304.1) µm throughout. Details are in the server README
 (commit `afc7187`).
 
