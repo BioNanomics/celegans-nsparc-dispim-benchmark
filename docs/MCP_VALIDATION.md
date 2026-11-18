@@ -460,8 +460,9 @@ Decisions taken on 18 November 2026 for the two gaps in issue #3:
   0.10.0 (commit `9516cfb`, mock suite 94 passed) turns to or
   from the 60x oil objective only with `operator_confirmed: true`, lowers Z
   200 µm before the turret turns and never raises it. The 100x oil objective
-  and configuration-driven changes off oil stay refused. **It is not deployed
-  or validated on the microscope.** Until it is, 60x is changed by hand in NIS.
+  and configuration-driven changes off oil stay refused. It is deployed on the
+  microscope and passed dry checks (below); **refocus with oil has not been
+  validated**, so 60x is still brought into focus by hand in NIS.
 - **Long runs: start in NIS.** The 30-minute `run_experiment` limit stays. The
   60-minute pilot and 7.5-hour study templates are started from the NIS window,
   with MCP used for pre-run checks.
@@ -471,11 +472,32 @@ Both server changes are on branch `feature/0.9.1-safety-readbacks` in
 commit `fe2df82` (mock suite 82 passed); 0.10.0 is `9516cfb` on top of it.
 The live server file remains the 0.9.1 source (SHA-256 unchanged).
 
+### 0.10.0 microscope checks (dry)
+
+0.10.0 was deployed to the live server at about 16:20 EST (`initialize`
+reported 0.10.0) with the operator present, the sample seated and no ND run.
+XY stayed (3530.5, 304.1) µm throughout. Details are in the server README
+(commit `afc7187`).
+
+| Step | Result |
+|---|---|
+| 1. 60x without `operator_confirmed` | **Refused**; nothing moved (10x, Z 2584.68 µm) |
+| 2. 10x → 60x, confirmed | **Passed**: Z 2584.72 → 2384.68 µm before the turret, then position 1 → 3; Z not raised afterwards (2384.58 µm). **Run without oil**, although the confirmation stated oil was applied |
+| 3. Manual refocus with oil contact | **Not tested**: raising a dry oil objective toward the dish risks contact |
+| 4. Confirmed 60x → 10x with e-stop engaged | **Refused**; nothing moved. The operator released the e-stop |
+| 5. 60x → 10x, confirmed | **Passed**: Z 2384.60 → 2184.60 µm before the turret, then position 3 → 1; Z not raised afterwards (2184.42 µm) |
+
+Turret-phase Z deltas were −0.10 and −0.20 µm, similar to the earlier
+unexplained objective-change shifts. The MCP client kept the 0.9.1 tool schema
+after reconnecting, so steps 2, 4 and 5 were sent to the same server as direct
+JSON-RPC calls over HTTP. The server cannot detect oil; step 2 shows it relies
+on the person's confirmation. The 10x was left about 400 µm below its earlier
+focus.
+
 Remaining before closing the issue:
 
-1. Deploy 0.10.0 with a person at the microscope and validate it: refusal
-   without confirmation, 10x → 60x with the 200 µm drop, manual refocus,
-   60x → 10x with the drop, and e-stop refusal.
+1. Repeat the 60x refocus with oil and a sample: measure the Z raise needed
+   to reach oil contact against the 200 µm clearance.
 2. A pilot acquisition using the worksheet's MCP checklist, with a specimen.
 
 ## Future study checks and analysis
