@@ -337,6 +337,58 @@ experiment or another panel rather than the active AX scan settings, or not yet
 applied. Before the next capture, confirm the reduced values in the active AX
 acquisition panel; the server cannot read them before capture.
 
+## Single-channel capture and responsiveness during acquisition
+
+The operator found no "1x" option for line integration or averaging, and set
+the active AX scan to **GFP only**. At **15:49:11 EST** one further test capture
+was taken through the `nis` MCP registration with the settings then active.
+The server selected and changed nothing, started no Live view or ND experiment,
+and did not change the e-stop.
+
+Fresh pre-capture checks reported: e-stop released, ND inactive and capture
+state idle. The objective was **PLAN APO λD 10x OFN25 DIC N1**. XY was
+(3530.5, 304.1) µm and Z device 0 was 2584.64 µm. Other imaging readbacks were
+unchanged, and the active configuration names were still blank.
+
+`capture` was called once with `include_stats=false` and returned `running`.
+About 1 s into acquisition, `echo` returned its text unchanged and
+`capture_status` reported `running` in the `acquire` phase. **The server stayed
+responsive during the capture.** The same `capture_id` was followed until it
+completed. No second capture was issued.
+
+| Phase | Time |
+|---|---|
+| Queue wait | 0.016 s |
+| Acquire | **10.500 s** |
+| Save | 0.125 s |
+| Close | 0.187 s |
+| Total | **10.828 s** |
+
+Raw `rc_capture`, `rc_save` and `rc_close` were all 0, and `saved` was true.
+
+`claude_test_20261118_154911.nd2`
+
+- Size: **692,224 bytes**.
+- SHA-256: `72b5e90ff040f373f37e64171e3e36168227c5a3895027394588a620c47c3399`.
+- Opened offline with `nd2` 0.11.3.
+- Dimensions: **Y=512, X=512**, `uint16`, one channel and no time or Z series.
+- Channel: **GFP**. Pixel size: **1.513 µm**.
+- Pixel values spanned only **0–18 counts**; no specimen signal is evident.
+
+Recorded capture settings: NSPARC CF, Galvano Unidirectional, Band scan mode,
+512 × 512, 2.0 µs dwell, **Line Integrating 10x**, GFP **Averaging 10x**,
+488 nm power 35.2, zoom 1.14. Only the channel count changed from the previous
+capture, which halved acquisition time from 20.6 s to 10.5 s.
+
+A 10.5-second frame leaves about 9.5 s within a 20-second interval. A
+five-frame, 20-second run therefore appears feasible, but only a measured ND
+run can confirm that inter-frame NIS overhead fits. This single-channel shape is
+accepted by `run-check`, which requires one channel and one position.
+
+Together with the earlier captures, this covers the issue's capture criterion:
+the ND2 files were readable, and the server stayed responsive during
+acquisition. It does not establish specimen signal or focus.
+
 ## Future study checks and analysis
 
 Before any further hardware action, repeat fresh `status` and `imaging_status`
