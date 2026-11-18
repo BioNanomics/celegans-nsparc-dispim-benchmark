@@ -224,6 +224,60 @@ time with one capture first. Then create the new experiment with
 Alternatively, lengthen the interval to suit the measured frame time; that
 would not be the five-frame, 20-second test requested.
 
+## Single capture after operator change to 512×512
+
+The operator then switched NIS to a **512×512** scan in the NIS window; the
+server did not change any setting. At **15:42:23 EST** one further test capture
+was taken through the `nis` MCP registration with the settings then active.
+No configuration, preset, laser, gain, pinhole, illumination, objective, stage
+or focus setting was selected or changed by the server. No Live view or ND
+experiment was started, and the e-stop was not changed.
+
+Fresh pre-capture checks reported: e-stop released, ND inactive and capture
+state idle. The objective was **PLAN APO λD 10x OFN25 DIC N1**. XY was
+(3530.5, 304.1) µm and Z device 0 was 2584.64 µm. Camera, light path, shutter,
+analyzer and Perfect Focus readbacks were unchanged from the previous capture.
+The active configuration names were still blank. The server does not read scan
+size, so the resolution change is confirmed from the saved file.
+
+`capture` was called once with `include_stats=false`. It returned `running`,
+and the same `capture_id` was polled until it completed. No second capture was
+issued.
+
+| Phase | Time |
+|---|---|
+| Queue wait | 0.031 s |
+| Acquire | **20.594 s** |
+| Save | 0.156 s |
+| Close | 0.250 s |
+| Total | **21.031 s** |
+
+Raw `rc_capture`, `rc_save` and `rc_close` were all 0, and `saved` was true.
+
+`claude_test_20261118_154223.nd2`
+
+- Size: **1,765,376 bytes**.
+- SHA-256: `5bf9f447a3db903eca0ffcc1aee1a907616d8301165abe5769b5e78c6e891c0d`.
+- Opened offline with `nd2` 0.11.3.
+- Dimensions: **C=3, Y=512, X=512**, `uint16`, with no time or Z series.
+- Channels: **GFP, RFP, TD**.
+- Pixel size: **1.513 µm**.
+- Pixel values spanned only **0–55 counts** across all channels. As before, the
+  file is readable but shows no evidence of specimen signal, focus or useful
+  exposure.
+
+Reducing the scan from 2048×2048 to 512×512 cut acquisition from 140.0 s to
+**20.6 s**, about 6.8 times faster. One frame still takes **slightly longer than
+a 20-second interval**, before any NIS overhead between frames. The
+five-frame, 20-second, 90-second timelapse therefore remains unsupported at
+these settings and was not run.
+
+The earlier 512×512 AX capture acquired in 2.562 s. Another setting therefore
+still lengthens each scan. Possible causes include scan mode, averaging or
+integration, line count, or NSPARC processing; no readback identifies which.
+Before repeating the timelapse, either reduce that setting in NIS and measure a
+new capture, or choose a longer interval that suits the measured frame time.
+
 ## Future study checks and analysis
 
 Before any further hardware action, repeat fresh `status` and `imaging_status`
