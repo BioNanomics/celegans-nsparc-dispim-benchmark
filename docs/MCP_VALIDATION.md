@@ -189,6 +189,41 @@ The 140-second acquisition of one 2048×2048 frame agrees with the
 phase there. At these settings one frame takes longer than the study's planned
 60-second interval. This capture is a software check, not study data.
 
+## 90-second timelapse request stopped at preflight
+
+After the single capture, a new 90-second timelapse was requested: a newly
+saved `MCP_Readiness_90s_<timestamp>` experiment with a **20-second interval
+and five time points**, keeping the current acquisition settings. It was
+**stopped at preflight**. No experiment was created, saved, loaded or run, and
+no acquisition setting was changed.
+
+Fresh preflight checks did not fail:
+
+| Check | Result |
+|---|---|
+| `status` | 10x DIC N1 objective; XY=(3530.5, 304.1) µm; Z device 0 = 2584.64 µm; ND inactive; e-stop released. |
+| `imaging_status` | Unchanged from the single capture: camera `Nikon_Confocal_Ax`, light path port 3, all shutters read closed, analyzer out, Perfect Focus off. Active configuration names were still blank. |
+| `capture_status` | Idle; the previous capture's completed record showed **140.032 s** to acquire. |
+| `list_experiments` | The same 9 experiments; no `MCP_Readiness_90s_<timestamp>` experiment existed. |
+
+**Reason for stopping:** the current settings took about 140 s to acquire one
+2048×2048 frame. That cannot support a 20-second interval, and five frames
+cannot fit in a 90-second phase. The [NSPARC CF validation](MCP_NSPARC_VALIDATION.md)
+recorded only one time point under similar conditions. The request did not
+allow acquisition settings to be changed, so the run was not attempted.
+
+Z device 0 read 2584.64 µm, compared with 2584.58 µm at the single capture. No
+stage or focus command was issued, and this check does not explain the
+difference.
+
+To repeat this test, a person must choose faster acquisition settings in NIS.
+Options include a smaller scan size (512×512 took about 2.6 s per frame in the
+earlier AX test), a faster scan mode or fewer channels. Measure the new frame
+time with one capture first. Then create the new experiment with
+**Save → New** and verify it with `list_experiments` before running it.
+Alternatively, lengthen the interval to suit the measured frame time; that
+would not be the five-frame, 20-second test requested.
+
 ## Future study checks and analysis
 
 Before any further hardware action, repeat fresh `status` and `imaging_status`
