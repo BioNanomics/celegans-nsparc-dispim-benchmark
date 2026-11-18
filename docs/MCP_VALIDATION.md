@@ -278,6 +278,65 @@ integration, line count, or NSPARC processing; no readback identifies which.
 Before repeating the timelapse, either reduce that setting in NIS and measure a
 new capture, or choose a longer interval that suits the measured frame time.
 
+## Single capture after reported scan reduction
+
+The operator reported reducing the scan settings in NIS. At **15:44:51 EST**
+one further test capture was taken through the `nis` MCP registration with the
+settings then active. The server selected and changed nothing, started no Live
+view or ND experiment, and did not change the e-stop.
+
+Fresh pre-capture checks reported: e-stop released, ND inactive and capture
+state idle. The objective was **PLAN APO λD 10x OFN25 DIC N1**. XY was
+(3530.5, 304.1) µm and Z device 0 was 2584.66 µm, 0.02 µm higher than at the
+previous capture with no stage or focus command issued. Other imaging readbacks
+were unchanged, and the active configuration names were still blank.
+
+`capture` was called once with `include_stats=false`. It returned `running`,
+and the same `capture_id` was polled until it completed. No second capture was
+issued.
+
+| Phase | Time |
+|---|---|
+| Queue wait | 0.032 s |
+| Acquire | **20.609 s** |
+| Save | 0.156 s |
+| Close | 0.250 s |
+| Total | **21.047 s** |
+
+Raw `rc_capture`, `rc_save` and `rc_close` were all 0, and `saved` was true.
+
+`claude_test_20261118_154451.nd2`
+
+- Size: **1,765,376 bytes**.
+- SHA-256: `93a7e9db961a015e2e805773008357a3a0b15d206c3f20208a4ec9345a8e441d`.
+- Opened offline with `nd2` 0.11.3.
+- Dimensions: **C=3, Y=512, X=512**, `uint16`, with no time or Z series.
+- Channels: **GFP, RFP, TD**. Pixel size: **1.513 µm**.
+- Pixel values spanned only **0–54 counts**; no specimen signal is evident.
+
+**The reported reduction was not in effect for this capture.** Acquisition
+time was unchanged (20.609 s against 20.594 s). The capture settings recorded
+in the ND2 metadata were identical to the previous 512×512 capture:
+
+| Setting | Recorded value |
+|---|---|
+| Detector / NSPARC mode | NSPARC / CF |
+| Scanner / scan mode | Galvano Unidirectional / Band |
+| Resolution / dwell time | 512 × 512 / 2.0 µs |
+| Line Integrating | **10x** |
+| Averaging (GFP, RFP) | **10x** each |
+| Lasers | 488 nm power 35.2; 561 nm power 11.8 |
+| TD gain / pinhole | 24.6 / 19.6 µm |
+| Zoom | 1.14 |
+
+Tenfold line integration and tenfold averaging across two fluorescence
+channels are the likely main contributors to the 20-second frame. Reducing them
+to 1x would be expected to shorten a frame substantially, but only a measured
+capture can establish the new time. The change may have been made in an ND
+experiment or another panel rather than the active AX scan settings, or not yet
+applied. Before the next capture, confirm the reduced values in the active AX
+acquisition panel; the server cannot read them before capture.
+
 ## Future study checks and analysis
 
 Before any further hardware action, repeat fresh `status` and `imaging_status`
