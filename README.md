@@ -13,6 +13,11 @@ NSPARC's 25-element detector improves photon collection and image-scanning micro
 
 AML18 is the currently available strain, and the existing recordings are non-study worm-imaging rehearsals. The next analysis is a bounded manual visibility and 2D spot-tracking feasibility review of the existing 10-minute movie, with uncertainty and held-out frames; it is not an embryonic lineage result. See the [acquired-data review](docs/DATA_REVIEW_2026-11-18.md) and [research roadmap](docs/RESEARCH_ROADMAP.md) for the evidence, limitations and gates before a new long run. The whole-embryo question below requires a suitable ubiquitous nuclear reporter.
 
+The [manual annotation protocol](docs/SPOT_ANNOTATION_PROTOCOL.md) and
+[frozen frame plan / blank tables](data/annotations/aml18_1111_v1/README.md)
+prepare that first case study. The plan is an evaluation-design record; it does
+not contain completed human labels or tracking scores.
+
 ## Published target
 
 Duncan et al. (2019, [DOI:10.3791/59533](https://doi.org/10.3791/59533)) acquired 10 **BV514** `ujIs113` embryos with ubiquitous mCherry-histone nuclear labeling, at **20 °C**, **one 3D volume per embryo per minute**, over **7.5 hours** (**451 volumes**). They assessed developmental timing and embryo viability, finding no detectable phototoxicity under their reported conditions.

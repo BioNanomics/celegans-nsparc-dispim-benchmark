@@ -1,0 +1,1151 @@
+{
+  "schema": "celegans_benchmark.spot_annotation.frame_plan",
+  "schema_version": 1,
+  "source_name": "Celegans_01_stack_timing1111.nd2",
+  "source_sha256": "92b17d8a92f5eebf5f2085a7b22d3504c47f22adfeb2640ee245a6aa7d1a2e91",
+  "frame_count": 151,
+  "width_px": 1024,
+  "height_px": 1024,
+  "pixel_um": 0.5066912885485768,
+  "coordinate_convention": "Zero-based full-image pixel centres; origin is upper-left, x is column and y is row. Image-space x_um=x_px*pixel_um and y_um=y_px*pixel_um; these are not stage coordinates.",
+  "timebase": "Native ND2 frame-start timestamps, elapsed seconds since the first frame",
+  "primary_channel": "GFP",
+  "context_channels": [
+    "RFP",
+    "TD"
+  ],
+  "seed": 20261118,
+  "secondary_review_method": "sha256-ranking-v1: five development and five evaluation frames; no buffer frames",
+  "secondary_review_frames": [
+    19,
+    34,
+    47,
+    49,
+    53,
+    81,
+    90,
+    105,
+    124,
+    125
+  ],
+  "prior_preview_frames": [
+    0,
+    38,
+    75,
+    112,
+    150
+  ],
+  "held_out_disclosure": "Frames 0, 38, 75, 112 and 150 were qualitatively previewed before this plan. Evaluation means withheld from tracker fitting and threshold selection, not wholly unseen images. The temporal blocks come from one movie and are not independent biological replicates.",
+  "matching_tolerance_um": null,
+  "visibility_states": [
+    "visible",
+    "uncertain",
+    "not_visible"
+  ],
+  "frame_review_states": [
+    "not_reviewed",
+    "reviewed",
+    "needs_review"
+  ],
+  "splits": {
+    "development": {
+      "start_frame": 0,
+      "end_frame": 59,
+      "frame_count": 60
+    },
+    "buffer": {
+      "start_frame": 60,
+      "end_frame": 74,
+      "frame_count": 15
+    },
+    "evaluation": {
+      "start_frame": 75,
+      "end_frame": 150,
+      "frame_count": 76
+    }
+  },
+  "frames": [
+    {
+      "frame_index": 0,
+      "time_s": 0.0,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 1,
+      "time_s": 4.00000100004673,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 2,
+      "time_s": 8.000001000046732,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 3,
+      "time_s": 12.000001000046732,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 4,
+      "time_s": 16.00000100004673,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 5,
+      "time_s": 20.00000100004673,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 6,
+      "time_s": 24.00000100004673,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 7,
+      "time_s": 28.00000100004673,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 8,
+      "time_s": 32.00000100004673,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 9,
+      "time_s": 36.00000100004673,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 10,
+      "time_s": 40.00000199997425,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 11,
+      "time_s": 44.00000199997425,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 12,
+      "time_s": 48.00000199997425,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 13,
+      "time_s": 52.00000199997425,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 14,
+      "time_s": 56.00000199997425,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 15,
+      "time_s": 60.00000199997425,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 16,
+      "time_s": 64.00000199997424,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 17,
+      "time_s": 68.00000199997424,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 18,
+      "time_s": 72.00000199997424,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 19,
+      "time_s": 76.00000199997424,
+      "split": "development",
+      "secondary_review": true,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 20,
+      "time_s": 80.00000300002097,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 21,
+      "time_s": 84.00000199997424,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 22,
+      "time_s": 88.00000300002097,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 23,
+      "time_s": 92.00000300002097,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 24,
+      "time_s": 96.00000300002097,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 25,
+      "time_s": 100.00000300002097,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 26,
+      "time_s": 104.00000300002097,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 27,
+      "time_s": 108.00000300002097,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 28,
+      "time_s": 112.00000300002097,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 29,
+      "time_s": 116.00000300002097,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 30,
+      "time_s": 120.0000040000677,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 31,
+      "time_s": 124.0000040000677,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 32,
+      "time_s": 128.0000040000677,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 33,
+      "time_s": 132.0000040000677,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 34,
+      "time_s": 136.0000040000677,
+      "split": "development",
+      "secondary_review": true,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 35,
+      "time_s": 140.0000040000677,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 36,
+      "time_s": 144.0000040000677,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 37,
+      "time_s": 148.0000040000677,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 38,
+      "time_s": 152.0000040000677,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 39,
+      "time_s": 156.0000040000677,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 40,
+      "time_s": 160.0000040000677,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 41,
+      "time_s": 164.0000040000677,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 42,
+      "time_s": 168.0000049999952,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 43,
+      "time_s": 172.0000049999952,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 44,
+      "time_s": 176.0000049999952,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 45,
+      "time_s": 180.0000049999952,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 46,
+      "time_s": 184.0000049999952,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 47,
+      "time_s": 188.0000049999952,
+      "split": "development",
+      "secondary_review": true,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 48,
+      "time_s": 192.0000049999952,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 49,
+      "time_s": 196.0000049999952,
+      "split": "development",
+      "secondary_review": true,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 50,
+      "time_s": 200.00000600004196,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 51,
+      "time_s": 204.00000600004196,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 52,
+      "time_s": 208.00000600004196,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 53,
+      "time_s": 212.00000600004196,
+      "split": "development",
+      "secondary_review": true,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 54,
+      "time_s": 216.00000600004196,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 55,
+      "time_s": 220.00000600004196,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 56,
+      "time_s": 224.00000600004196,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 57,
+      "time_s": 228.00000600004196,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 58,
+      "time_s": 232.00000600004196,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 59,
+      "time_s": 236.0000069999695,
+      "split": "development",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 60,
+      "time_s": 240.00000600004196,
+      "split": "buffer",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 61,
+      "time_s": 244.00000600004196,
+      "split": "buffer",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 62,
+      "time_s": 248.0000069999695,
+      "split": "buffer",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 63,
+      "time_s": 252.0000069999695,
+      "split": "buffer",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 64,
+      "time_s": 256.00000699996946,
+      "split": "buffer",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 65,
+      "time_s": 260.00000699996946,
+      "split": "buffer",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 66,
+      "time_s": 264.00000699996946,
+      "split": "buffer",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 67,
+      "time_s": 268.00000699996946,
+      "split": "buffer",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 68,
+      "time_s": 272.00000699996946,
+      "split": "buffer",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 69,
+      "time_s": 276.00000699996946,
+      "split": "buffer",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 70,
+      "time_s": 280.0000080000162,
+      "split": "buffer",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 71,
+      "time_s": 284.0000080000162,
+      "split": "buffer",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 72,
+      "time_s": 288.0000080000162,
+      "split": "buffer",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 73,
+      "time_s": 292.0000080000162,
+      "split": "buffer",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 74,
+      "time_s": 296.0000080000162,
+      "split": "buffer",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 75,
+      "time_s": 300.0000080000162,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 76,
+      "time_s": 304.0000080000162,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 77,
+      "time_s": 308.0000080000162,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 78,
+      "time_s": 312.00000900006296,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 79,
+      "time_s": 316.0000080000162,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 80,
+      "time_s": 320.00000900006296,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 81,
+      "time_s": 324.0000080000162,
+      "split": "evaluation",
+      "secondary_review": true,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 82,
+      "time_s": 328.00000900006296,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 83,
+      "time_s": 332.00000900006296,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 84,
+      "time_s": 336.00000900006296,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 85,
+      "time_s": 340.00000900006296,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 86,
+      "time_s": 344.00000900006296,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 87,
+      "time_s": 348.00000900006296,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 88,
+      "time_s": 352.00000900006296,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 89,
+      "time_s": 356.00000900006296,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 90,
+      "time_s": 360.0000099999905,
+      "split": "evaluation",
+      "secondary_review": true,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 91,
+      "time_s": 364.0000099999905,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 92,
+      "time_s": 368.0000099999905,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 93,
+      "time_s": 372.0000099999905,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 94,
+      "time_s": 376.0000099999905,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 95,
+      "time_s": 380.0000099999905,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 96,
+      "time_s": 384.0000099999905,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 97,
+      "time_s": 388.0000099999905,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 98,
+      "time_s": 392.0000099999905,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 99,
+      "time_s": 396.0000099999905,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 100,
+      "time_s": 400.0000099999905,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 101,
+      "time_s": 404.0000099999905,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 102,
+      "time_s": 408.0000110000372,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 103,
+      "time_s": 412.0000110000372,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 104,
+      "time_s": 416.0000110000372,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 105,
+      "time_s": 420.0000110000372,
+      "split": "evaluation",
+      "secondary_review": true,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 106,
+      "time_s": 424.0000110000372,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 107,
+      "time_s": 428.0000110000372,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 108,
+      "time_s": 432.0000110000372,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 109,
+      "time_s": 436.0000110000372,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 110,
+      "time_s": 440.0000119999647,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 111,
+      "time_s": 444.0000119999647,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 112,
+      "time_s": 448.0000119999647,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 113,
+      "time_s": 452.0000119999647,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 114,
+      "time_s": 456.0000119999647,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 115,
+      "time_s": 460.0000119999647,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 116,
+      "time_s": 464.0000119999647,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 117,
+      "time_s": 468.0000119999647,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 118,
+      "time_s": 472.0000119999647,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 119,
+      "time_s": 476.0000119999647,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 120,
+      "time_s": 480.0000119999647,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 121,
+      "time_s": 484.0000119999647,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 122,
+      "time_s": 488.00001300001145,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 123,
+      "time_s": 492.00001300001145,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 124,
+      "time_s": 496.00001300001145,
+      "split": "evaluation",
+      "secondary_review": true,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 125,
+      "time_s": 500.00001300001145,
+      "split": "evaluation",
+      "secondary_review": true,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 126,
+      "time_s": 504.00001300001145,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 127,
+      "time_s": 508.00001300001145,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 128,
+      "time_s": 512.0000130000114,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 129,
+      "time_s": 516.0000130000114,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 130,
+      "time_s": 520.0000140000582,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 131,
+      "time_s": 524.0000140000582,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 132,
+      "time_s": 528.0000140000582,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 133,
+      "time_s": 532.0000140000582,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 134,
+      "time_s": 536.0000140000582,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 135,
+      "time_s": 540.0000140000582,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 136,
+      "time_s": 544.0000140000582,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 137,
+      "time_s": 548.0000140000582,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 138,
+      "time_s": 552.0000149999856,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 139,
+      "time_s": 556.0000149999856,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 140,
+      "time_s": 560.0000149999856,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 141,
+      "time_s": 564.0000140000582,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 142,
+      "time_s": 568.0000149999856,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 143,
+      "time_s": 572.0000149999856,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 144,
+      "time_s": 576.0000149999856,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 145,
+      "time_s": 580.0000149999856,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 146,
+      "time_s": 584.0000149999856,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 147,
+      "time_s": 588.0000149999856,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 148,
+      "time_s": 592.0000149999856,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 149,
+      "time_s": 596.0000149999856,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    },
+    {
+      "frame_index": 150,
+      "time_s": 600.0000160000325,
+      "split": "evaluation",
+      "secondary_review": false,
+      "review_status": "not_reviewed"
+    }
+  ],
+  "display": {
+    "channels": [
+      {
+        "name": "GFP",
+        "color": "#00ff00",
+        "display_lo": 9.0,
+        "display_hi": 524.0
+      },
+      {
+        "name": "RFP",
+        "color": "#ffaa00",
+        "display_lo": 0.0,
+        "display_hi": 203.0
+      },
+      {
+        "name": "TD",
+        "color": "#ffffff",
+        "display_lo": 91.0,
+        "display_hi": 254.0
+      }
+    ],
+    "saved_mode": "Live Deconvolution",
+    "source_significant_bits": 12,
+    "transform": "Fixed first-frame 1st/99.8th percentile linear LUT to 8-bit; no resize"
+  }
+}
