@@ -457,7 +457,7 @@ untested.
 Decisions taken on 18 November 2026 for the two gaps in issue #3:
 
 - **60x oil objective: allow it in the server, with safeguards.** Server
-  0.10.0 (branch `feature/60x-oil-objective`, mock suite 94 passed) turns to or
+  0.10.0 (commit `9516cfb`, mock suite 94 passed) turns to or
   from the 60x oil objective only with `operator_confirmed: true`, lowers Z
   200 µm before the turret turns and never raises it. The 100x oil objective
   and configuration-driven changes off oil stay refused. **It is not deployed
@@ -466,9 +466,10 @@ Decisions taken on 18 November 2026 for the two gaps in issue #3:
   60-minute pilot and 7.5-hour study templates are started from the NIS window,
   with MCP used for pre-run checks.
 
-The server's 0.9.1 source, on which these microscope checks ran, is committed
-on branch `feature/0.9.1-safety-readbacks` (mock suite 82 passed, live file
-SHA-256 unchanged).
+Both server changes are on branch `feature/0.9.1-safety-readbacks` in
+`nis-elements-mcp`. The 0.9.1 source, on which these microscope checks ran, is
+commit `fe2df82` (mock suite 82 passed); 0.10.0 is `9516cfb` on top of it.
+The live server file remains the 0.9.1 source (SHA-256 unchanged).
 
 Remaining before closing the issue:
 
