@@ -389,6 +389,69 @@ Together with the earlier captures, this covers the issue's capture criterion:
 the ND2 files were readable, and the server stayed responsive during
 acquisition. It does not establish specimen signal or focus.
 
+## Single-channel 90-second ND run checked with `run-check`
+
+The operator created a new experiment in NIS with **Save → New**, using the
+GFP-only scan settings above. `list_experiments` then listed it, and the
+settings index had been written at **15:53:08 EST**:
+
+- Saved name: `" MCP_Readiness_90s_1ch"`. **The saved name has a leading
+  space**, and the run used it exactly as saved.
+- Time loop only: **90 s** duration, **20 s** interval, **5** frames. Z, XY,
+  lambda and large-image loops were disabled.
+- Output: `MCP_Readiness_NSPARC_90s_002.nd2`. The file did not exist before the
+  run, so nothing was overwritten. The name follows the earlier NSPARC template
+  rather than a `_1ch` name and should not be mistaken for an NSPARC
+  2048×2048 result.
+- Autofocus state is not reported by the server; it relies on the operator's
+  setup.
+
+Fresh preflight checks reported: e-stop released, ND inactive, capture idle,
+**PLAN APO λD 10x OFN25 DIC N1**, XY=(3530.5, 304.1) µm and Z device 0 =
+2584.64 µm. No other experiment was edited or run.
+
+`run_experiment` was called **once** at **15:53:50 EST**. The client's tool call
+timed out after 60 s while the run continued. `status` confirmed the run was
+active (elapsed 63 s, then 85, 89 and 90 s), and the run was **not reissued**.
+At 90 s the server still reported the run active; the next `status`, after
+15:55:53, reported `nd_running=false`. Elapsed runtime was therefore between
+90 s and about 123 s. The server does not report an exact end time, and the
+cached expected end of 15:55:20 was not treated as completion. Afterwards XY
+was unchanged and Z device 0 read 2584.66 µm.
+
+`MCP_Readiness_NSPARC_90s_002.nd2`
+
+- Size: **2,904,064 bytes**.
+- SHA-256: `07b5a33bde4558d85a8bdeada39f4d6466d5838386d73e10bb4af597bf51a16c`.
+- Opened offline with `nd2` 0.11.3.
+- Dimensions: **T=5, Y=512, X=512**, `uint16`, one channel, with no Z or XY
+  series.
+- Channel: **GFP**. Recorded scan settings: 512 × 512, 2.0 µs dwell,
+  Line Integrating 10x, Averaging 10x.
+- Recorded time points: **0.249, 20.249, 40.249, 60.249, 80.249 s**.
+  Successive intervals: **20.000001, 20.000001, 20.0, 20.0 s**.
+- Pixel values spanned only **0–17 counts**; no specimen signal is evident.
+
+The project's `run-check` was run with `--planned-interval 20`. The package was
+not installed in the available Python, so it was run from source with
+`PYTHONPATH=src`; nothing was installed. It exited with code 0:
+
+| Result | Value |
+|---|---|
+| Time points | 5 |
+| Slices per stack | 1 |
+| Interval mean / min / max | 20.0 / 20.0 / 20.0 s |
+| Late intervals | 0 |
+| Estimated missing stacks | 0 |
+| Stack duration; stack fits interval | Unknown (single plane) |
+| Signal 99.9th percentile, first / last | 6.0 / 6.0 counts (100%) |
+
+**This run met the requested five frames at 20-second intervals.** It covers
+the issue's criterion of one short saved ND experiment run end to end and
+checked with `run-check`. It validates software timing only. Specimen signal,
+focus, Z-stack timing, the 60x workflow and runs longer than 30 minutes remain
+untested.
+
 ## Future study checks and analysis
 
 Before any further hardware action, repeat fresh `status` and `imaging_status`
