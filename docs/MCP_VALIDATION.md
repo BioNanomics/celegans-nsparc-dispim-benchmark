@@ -452,6 +452,31 @@ checked with `run-check`. It validates software timing only. Specimen signal,
 focus, Z-stack timing, the 60x workflow and runs longer than 30 minutes remain
 untested.
 
+## Decisions on the remaining gaps
+
+Decisions taken on 18 November 2026 for the two gaps in issue #3:
+
+- **60x oil objective: allow it in the server, with safeguards.** Server
+  0.10.0 (branch `feature/60x-oil-objective`, mock suite 94 passed) turns to or
+  from the 60x oil objective only with `operator_confirmed: true`, lowers Z
+  200 µm before the turret turns and never raises it. The 100x oil objective
+  and configuration-driven changes off oil stay refused. **It is not deployed
+  or validated on the microscope.** Until it is, 60x is changed by hand in NIS.
+- **Long runs: start in NIS.** The 30-minute `run_experiment` limit stays. The
+  60-minute pilot and 7.5-hour study templates are started from the NIS window,
+  with MCP used for pre-run checks.
+
+The server's 0.9.1 source, on which these microscope checks ran, is committed
+on branch `feature/0.9.1-safety-readbacks` (mock suite 82 passed, live file
+SHA-256 unchanged).
+
+Remaining before closing the issue:
+
+1. Deploy 0.10.0 with a person at the microscope and validate it: refusal
+   without confirmation, 10x → 60x with the 200 µm drop, manual refocus,
+   60x → 10x with the drop, and e-stop refusal.
+2. A pilot acquisition using the worksheet's MCP checklist, with a specimen.
+
 ## Future study checks and analysis
 
 Before any further hardware action, repeat fresh `status` and `imaging_status`
