@@ -467,10 +467,12 @@ Decisions taken on 18 November 2026 for the two gaps in issue #3:
   60-minute pilot and 7.5-hour study templates are started from the NIS window,
   with MCP used for pre-run checks.
 
-Both server changes are on branch `feature/0.9.1-safety-readbacks` in
-`nis-elements-mcp`. The 0.9.1 source, on which these microscope checks ran, is
-commit `fe2df82` (mock suite 82 passed); 0.10.0 is `9516cfb` on top of it.
-The live server file remains the 0.9.1 source (SHA-256 unchanged).
+Both server changes were merged to `main` in `nis-elements-mcp` PR #3 (merge
+commit `28a589f`; CI passed on Ubuntu and Windows, Python 3.11 and 3.13). The
+0.9.1 source, on which the earlier microscope checks ran, is commit `fe2df82`
+(mock suite 82 passed); 0.10.0 is `9516cfb` (94 passed), and its dry checks are
+recorded in `afc7187`. The live server now runs 0.10.0 from `main` (file SHA-256
+`1690c1f349e7cf1a5ea7c60268a4a7eb5b384793ebf3b0803748ba7ee9e050bb`).
 
 ### 0.10.0 microscope checks (dry)
 
