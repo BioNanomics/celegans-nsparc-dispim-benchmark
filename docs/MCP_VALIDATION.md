@@ -502,6 +502,80 @@ Remaining before closing the issue:
    to reach oil contact against the 200 µm clearance.
 2. A pilot acquisition using the worksheet's MCP checklist, with a specimen.
 
+## Pilot pre-run check (no embryo)
+
+The pilot acquisition was started with the worksheet's MCP pre-run checks, then
+**stopped because no embryo was ready**. Nothing was run. The read-only checks
+passed:
+
+| Check | Result |
+|---|---|
+| `echo` | Answered |
+| `status` | 10x, Z 2184.42 µm (about 400 µm below the earlier 10x focus after the 60x checks), XY (3530.5, 304.1) µm, e-stop released, ND inactive |
+| `imaging_status` | AX camera, port 3, shutters closed, Perfect Focus off; active configuration names blank |
+| `list_experiments` | `Celegans_02_pilot_short_60s`: 60 min, 60 s interval, 61 frames, Z-stack **1 step at 0.75 µm** |
+| Output file | `Celegans_02_pilot_short_60s.nd2` did not exist; ample free disk space |
+
+Problems found before any pilot run:
+
+1. The saved pilot Z-stack (1 step) does not match the [protocol](PROTOCOL.md)'s
+   40–60 Z sections at 0.5–0.75 µm covering the whole embryo.
+2. Single-plane frame time with 10x line integration and 10x averaging was
+   10.5 s, so a 40-plane stack would take about 7 minutes, far over 60 s.
+3. The protocol's BV514 strain is mCherry-histone, so the pilot should use the
+   RFP / 561 nm channel; the earlier single-channel tests used GFP.
+4. The pilot needs the 60x oil objective, focused by hand.
+5. The 60-minute run must be started in NIS (30-minute MCP limit).
+
+The pilot acquisition remains open until an embryo is mounted.
+
+## RFP-only frame time without integration or averaging
+
+To check whether the 60 s arm is feasible before embryo day, the operator set
+the active AX scan to **RFP only, line integration off and averaging off**.
+At **16:50:23 EST** one capture was taken on the 10x with no specimen. Fresh
+checks reported e-stop released, ND inactive and capture idle. The server
+selected and changed nothing.
+
+| Phase | Time |
+|---|---|
+| Queue wait | 0.062 s |
+| Acquire | **1.688 s** |
+| Save | 0.125 s |
+| Close | 0.640 s |
+| Total | **2.531 s** |
+
+Raw `rc_capture`, `rc_save` and `rc_close` were all 0, and `saved` was true.
+
+`claude_test_20261118_165023.nd2`
+
+- Size: **688,128 bytes**.
+- SHA-256: `be9a7d9e0d445274f3e68d96daa42497da908452b510a2af6eb457bb26544fdd`.
+- Opened offline with `nd2` 0.11.3.
+- Dimensions: **Y=512, X=512**, `uint16`, one channel (**RFP**), 1.514 µm pixels.
+- Pixel values **0–5 counts**, as expected without a specimen.
+- Recorded settings: NSPARC CF, Galvano Unidirectional, Band, 2.0 µs dwell,
+  561 nm power 11.8, emission 582–618 nm, zoom 1.14. **Line Integrating and
+  Averaging no longer appear in the metadata**, confirming the change took
+  effect (earlier files recorded 10x for each).
+
+Acquisition was about six times faster than the 10.5 s GFP frame with 10x
+integration and averaging. Estimated stack times from 1.688 s per plane,
+**excluding Z movement between planes**:
+
+| Planes | Estimate | Fits 60 s? |
+|---|---|---|
+| 30 | ≈ 51 s | Yes, with little margin |
+| 41 | ≈ 69 s | Probably not |
+| 60 | ≈ 101 s | No |
+
+These are estimates only. The next step is a measured 41-plane Z-stack run in
+NIS from a newly saved experiment with a new output filename: the
+`AML18_rehearsal_stack_timing_10x` template's saved output file already exists.
+At 60x, 512 × 512 at this zoom gives roughly 0.25 µm pixels, coarser than the
+protocol's 0.15–0.20 µm; a larger frame or higher zoom changes the timing and
+must be measured again at the final settings.
+
 ## Future study checks and analysis
 
 Before any further hardware action, repeat fresh `status` and `imaging_status`
