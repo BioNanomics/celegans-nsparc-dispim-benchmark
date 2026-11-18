@@ -1,0 +1,317 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue]{hyperref}
+
+% Visible reminders: delete every \todo before submission.
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+
+\title{Can NSPARC Confocal Imaging Support Embryonic Cell-Lineage Tracking in
+\textit{Caenorhabditis elegans}? A Pre-Specified Feasibility Benchmark Against Published diSPIM}
+\author{\todo{Authors and affiliations}}
+\date{\todo{Date}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Light-sheet microscopy has been used to follow every nucleus in the developing
+\textit{C.\ elegans} embryo for hours with no detectable phototoxicity. It is
+unclear whether a laser-scanning confocal microscope with an image-scanning detector
+(Nikon NSPARC) can do the same. We describe a pre-specified pilot that images
+BV514 embryos (ubiquitous nuclear mCherry--histone) at 60~s and 180~s volume
+intervals, alongside non-fluorescence-imaged controls, and measures manually
+verified nuclear detection, lineage-link correctness, developmental timing and
+hatching. Audit frames are selected per developmental stage before review, and all
+analysis uses an open, tested pipeline that records the code version and inputs of
+every report. The study is a feasibility benchmark, not an equivalence or safety trial.
+In instrument rehearsals on non-study worms, a 41-plane stack (28.6~s) fitted the
+60~s interval for 8~h with no missed volumes, while high-excitation single-plane
+imaging caused rapid signal loss and loss of worm movement, supporting the use of
+low excitation in the pilot.
+\todo{Add one sentence of embryo results after the pilot.}
+\end{abstract}
+
+\section{Introduction}
+Reconstructing the cell lineage of the \textit{C.\ elegans} embryo requires
+three-dimensional imaging fast enough to follow dividing nuclei, gentle enough
+not to disturb development, and sensitive enough to resolve crowded nuclei late in
+embryogenesis. Duncan et al.\ imaged ten BV514 embryos (transgene \texttt{ujIs113},
+mCherry--histone) on a dual-view inverted selective-plane illumination microscope
+(diSPIM) at 20\textdegree C, one volume per minute for 7.5~h, and reported no
+detectable phototoxicity based on developmental timing and hatching~\cite{duncan2019}.\footnote{The
+main text of~\cite{duncan2019} reports 7.5~h and 451 volumes per embryo; a figure legend
+in the same article refers to 6.4~h imaging sessions. We use the main-text values as the
+cadence and duration target.}
+Downstream, automated lineage tracing and identity assignment have been
+benchmarked on light-sheet data~\cite{tran2026}.
+
+The Nikon NSPARC detector is a 25-element array detector that records a small image
+at each scanned point and is used for image-scanning microscopy; the vendor reports
+improved signal collection and lower required excitation~\cite{nikon}. NSPARC
+does not turn confocal illumination into a light sheet, and the vendor's phototoxicity
+claims are not independent measurements. Whether this improvement is sufficient for
+long, whole-embryo lineage tracking is an empirical question.
+
+\textbf{Research question.} How far into embryogenesis can NSPARC confocal imaging
+recover high-confidence nuclear identities and divisions at a useful temporal cadence
+without altering normal development?
+
+\section{Methods}
+\subsection{Design and groups}
+Embryos are randomly assigned to three groups, blocked by imaging day, operator,
+strain and mounting batch: \textbf{NSPARC\_60s} (one whole-embryo Z stack every
+60~s for 450~min, 451 volumes), \textbf{NSPARC\_180s} (every 180~s for 450~min,
+151 volumes; a lower-dose arm) and \textbf{CONTROL} (same strain, mount and
+temperature, without fluorescence excitation). Embryos in all groups are followed
+for development and hatching on the same transmitted-light schedule, using the
+lamp and not a laser-based transmitted channel, so that controls receive no laser
+light. On this system the laser transmitted-light (TD) channel is illuminated by
+the 561~nm line, which we confirmed during setup; it is therefore not used for
+controls. \todo{Follow-up schedule.} A feasibility pilot of three embryos per group is
+planned, expanding to about ten per group. All attempted acquisitions, failures
+and exclusions are retained. The \emph{embryo} is the independent unit; frames and
+nuclei are nested within embryos.
+
+\subsection{Strain, mounting and environment}
+Strain BV514 (\texttt{ujIs113}, ubiquitous mCherry--histone) is used where available.
+Two- to four-cell embryos are mounted using a locally validated preparation
+approved by the laboratory manager, at a target of 20\textdegree C with the measured
+temperature recorded. Because unsealed mounts lost focus during a 15~h rehearsal
+(Section~\ref{sec:rehearsal-results}), mounts for long runs are sealed against
+evaporation and equilibrated on the stage before acquisition starts.
+\todo{Mounting chamber, buffer, sealing method and equilibration time, once the local SOP is fixed.}
+
+\subsection{Image acquisition}
+Imaging uses a Nikon AX confocal on a Ti2 stand with the NSPARC detector, controlled
+by NIS-Elements AR 6.20.02. Nuclei are imaged in a single channel: mCherry excited
+at 561~nm and detected at 570--616~nm, with a Plan Apo $\lambda$D $60\times$ oil
+objective \todo{NA; confirm that an oil objective is acceptable for live embryos,
+as no $40\times$ water/silicone objective is installed}. Scanning is bidirectional
+with no line integration, at a $512\times512$ scan format; zoom is set so that the
+embryo fills the field at approximately 0.2~\textmu m per pixel (the
+unzoomed pixel size at this format is 0.58~\textmu m). Z stacks use a 0.75~\textmu m
+step over the full embryo depth (approximately 30~\textmu m, about 41 planes),
+with top and bottom set on each embryo before every run; stored absolute Z
+positions are cleared before each run, because a stored position from a previous
+session moved the objective to the wrong height during setup. The laser shutter is
+closed between volumes. NSPARC is operated in \todo{CF or SR mode; whether
+summed-detector and pixel-reassignment reconstructions can both be produced from
+the same acquisition}. \todo{Final zoom and Z range.}
+
+At this format the software reports a frame time of about 0.49~s per plane. In
+rehearsals at the same scan format ($10\times$ objective, Section~\ref{sec:rehearsal}),
+a 41-plane stack took 28.3--28.7~s including Z motion (0.69~s per plane), leaving
+about 31~s spare in each 60~s interval. The achieved stack time is measured again on
+the first embryos with the $60\times$ objective and final zoom, and the 60~s arm is
+not attempted if a stack takes 60~s or longer.
+
+Focus is held with the Perfect Focus System (PFS) where it can lock on the sample;
+the PFS state is recorded for every run. Without PFS, an unsealed slide drifted out
+of focus within minutes even though the objective position was unchanged
+(Section~\ref{sec:rehearsal-results}). \todo{PFS lock and offset on embryo mounts.}
+
+Excitation is set to the lowest level that still gives usable nuclear detection,
+and the power at the sample is measured in mW (laser percentage is not a dose).
+For every embryo we record scan settings, measured power, achieved volume interval,
+number of recorded volumes, temperature and the SHA-256 checksum of the raw ND2
+file. Acquisition settings are saved as named templates per group so that every
+embryo in a group is imaged identically. \todo{Measured power, achieved intervals.}
+
+\subsection{Instrument rehearsals}\label{sec:rehearsal}
+Before the pilot, the acquisition chain was rehearsed on adult and larval worms that
+are not study samples: strain AML18 (\texttt{wtfIs3}, nuclear GFP and tagRFP in all
+neurons) and other worms on unsealed slides, not immobilized, at room temperature,
+with a Plan Apo $\lambda$D $10\times$ NA~0.45 objective. Two conditions were used:
+\begin{itemize}
+  \item \textbf{Low dose} (2026-10-23/24): 561~nm at 3\% laser, 570--616~nm, CF mode,
+        $512\times512$ bidirectional, 41 planes at 0.75~\textmu m every 60~s, for 1~h
+        and 8~h, PFS off.
+  \item \textbf{High dose} (2026-11-10 and 11-12): 488~nm at 75.5\% and 561~nm at
+        45.9--51.4\% laser plus the TD channel, $1024\times1024$, a single plane every
+        4~s (2~h and 4~h) or 10~s (15~h), PFS off.
+\end{itemize}
+Laser power at the sample was not measured in the rehearsals, so the two conditions
+are compared by settings only. Rehearsal data are used to check the acquisition
+chain and to choose settings; they are not study data and do not enter any
+outcome or feasibility target.
+
+Each rehearsal file was analysed frame by frame from the raw ND2 with an
+accompanying script (\texttt{scripts/analyze\_timelapse.py}; Z stacks are
+max-projected). Timing was taken from the acquisition metadata. \emph{Signal} was
+the mean of foreground pixels (above the frame median plus 6 median absolute
+deviations) minus the median, expressed as a fraction of the first five frames.
+\emph{Movement} was measured in two ways: the fraction of TD pixels that changed
+by more than six robust standard deviations between consecutive frames (high-dose
+runs only), and the turnover of the fluorescent foreground mask between frames
+60~s apart ($|A \oplus B|/|A \cup B|$), which uses masks rather than intensities so
+that bleaching is not counted as movement. Movement is reported as 30-min means
+relative to the first 30~min of the same run. Image sharpness was the
+variance of the Laplacian of the TD image, normalized by the squared mean intensity.
+
+\subsection{Manual validation}
+Audit frames are chosen before any results are reviewed. For each embryo, the
+tracker's per-frame nucleus counts are used to select a fixed number of frames from
+each stage ($<16$, 16--49, 50--99, 100--199, $\geq 200$ nuclei) with a recorded
+random seed; the frame list is saved and its SHA-256 recorded before auditing, so
+that the selection can be shown to precede the audit. Each audited frame is
+examined slice by slice through the full depth, recording each nucleus's position
+so that it is counted once, and compared with the tracker's detections to give
+true positives (TP), false positives (FP) and false negatives (FN). Near-side and
+far-side nuclei may be audited separately. As an internal check, TP\,+\,FP for each
+frame must equal the tracker's count for that frame. Nuclei in division are counted
+by a rule fixed before auditing \todo{rule}, and uncertain counts are flagged.
+Division links are verified separately as correct or incorrect.
+\todo{Number of frames per stage; number of reviewers.}
+
+\subsection{Outcome measures}
+\begin{itemize}
+  \item Recall $=\mathrm{TP}/(\mathrm{TP}+\mathrm{FN})$, precision
+        $=\mathrm{TP}/(\mathrm{TP}+\mathrm{FP})$ and
+        $F_1=2\mathrm{TP}/(2\mathrm{TP}+\mathrm{FP}+\mathrm{FN})$, by stage and depth.
+        The stage of a frame is taken from its total nucleus count.
+  \item Fraction of verified parent--daughter links that are correct, by stage.
+  \item Stage depth reached: the last stage with interpretable identities.
+  \item Developmental timing relative to a common observed anchor (not raw movie time).
+  \item Hatching as hatched/known outcomes, with unknown outcomes reported
+        separately and never counted as failures.
+  \item Achieved interval, incomplete volumes and measured excitation power.
+\end{itemize}
+Signal loss over time (photobleaching) is recorded as an acquisition quality measure.
+It is not used as a measure of phototoxicity, which is assessed only through
+developmental timing and hatching relative to CONTROL embryos.
+
+\subsection{Provisional feasibility targets}
+We pre-specify two internal targets, not literature-derived standards: recall of at
+least 95\% on audited frames with at most 100 nuclei, and at least 90\% of verified
+links correct. Targets are judged per group, with each embryo's own result reported
+alongside. With no evaluable data a target is reported as ``not evaluable'', never
+as a failure. Because a target computed only on early, easy frames can pass while
+saying little about crowded stages, we report which stages contributed to each
+result.
+
+\subsection{Analysis software}
+Analysis uses an open, dependency-free Python pipeline (\texttt{celegans-benchmark},
+version 0.2.0) that validates the curated tables, rejects internally inconsistent
+records, and reports descriptive statistics per embryo and group. Every report
+includes a one-page summary and a provenance record with the software version, code
+commit, settings and the SHA-256 of each input table. The pipeline is covered by
+an automated test suite, including a study-sized fabricated dataset checked
+against independent recomputation, and the same workflow was rehearsed on a public
+\textit{C.\ elegans} embryo dataset~\cite{sugawara2021data} before the pilot; neither
+the fabricated nor the public data contribute to results. Acquisition quality of each
+raw time-lapse (interval, missed volumes, signal over time) is checked with the
+pipeline's \texttt{run-check} command or the time-lapse script described in
+Section~\ref{sec:rehearsal}.
+\url{https://github.com/BioNanomics/celegans-nsparc-dispim-benchmark}
+\todo{Release tag and commit hash used for the final analysis.}
+
+\section{Results}
+\subsection{Instrument rehearsals (non-study samples)}\label{sec:rehearsal-results}
+Table~\ref{tab:rehearsal} summarizes the rehearsals. Acquisition timing was exact
+in every run: no time point was late or missing. In the low-dose 8~h run, all 481
+volumes were recorded at 60.00~s intervals (range 59.92--60.08~s) with a stable stack
+time of 28.6~s, so the planned 60~s cadence with a 41-plane stack can be sustained for
+the full study duration.
+
+\begin{table}[h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Instrument rehearsals on non-study worms ($10\times$ objective). Signal is the
+background-subtracted foreground mean as a fraction of the start; movement is the last
+30-min mean as a fraction of the first.}
+\label{tab:rehearsal}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{1.0in}
+                >{\raggedright\arraybackslash}p{1.75in}
+                >{\raggedright\arraybackslash}p{0.65in}
+                >{\raggedright\arraybackslash}p{1.45in}
+                >{\raggedright\arraybackslash}p{1.05in}@{}}
+\toprule
+Run & Settings & Time points & Signal remaining & Movement, end vs start \\
+\midrule
+Low dose, 1~h  & 561~nm 3\%; 41 planes; every 60~s & 61/61
+               & red 96\% at 1~h & 100\% (mask turnover) \\
+Low dose, 8~h  & 561~nm 3\%; 41 planes; every 60~s & 481/481
+               & red 93\% at 2~h, 65\% at 8~h & 105\% (mask turnover) \\
+High dose, 2~h & 488~nm 75.5\%, 561~nm 51.4\%; 1 plane; every 4~s & 1801/1801
+               & GFP 29\%, red 62\% at 2~h & 24\% (TD motion) \\
+High dose, 4~h & as above & 3601/3601
+               & GFP 10\%, red 26\% at 4~h & 4\% (TD motion) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Signal fell much faster with high-dose single-plane imaging than with low-dose
+volume imaging: GFP lost half its signal in 27--32~min, whereas the red signal in
+the low-dose runs had not halved after 8~h despite 41 planes per time point. Worm
+movement declined steeply under high-dose imaging (to 4\% of the initial value after
+4~h in a field of crowded larvae, with an adult that stopped moving within about
+1~h in the 2~h run), but not under low-dose imaging, where movement maps at 0, 4 and
+8~h were similar. Because the two conditions also differed in slide, mount, sample
+density and single-plane versus volume imaging, and no unexposed field was imaged on
+the same slide, these observations point to excitation dose as a likely cause of the
+loss of movement but do not establish it.
+
+In a further 15~h high-dose rehearsal (488~nm 75.5\%, 561~nm 45.9\%, one plane every
+10~s, 5401 time points, PFS off), the image lost focus progressively: TD sharpness
+fell to 50\% of its starting value by 15~min and to about 26\% by 3~h, while the
+recorded objective position stayed within 0.32~\textmu m. The sample, not the
+objective, therefore moved relative to the focal plane, consistent with thermal
+settling and drying of the unsealed mount. Fluorescence fell to background within
+about 3~h. Movement could not be assessed after the first 1--2~h because defocus
+masks it.
+
+\subsection{Embryo pilot}
+\todo{No embryo data yet. Report every embryo individually (group, settings, stage depth,
+fate), then per-group summaries.}
+
+\section{Discussion}
+\todo{Write after results. Interpret as consistency with the published biological
+benchmark, not as equivalence to diSPIM.}
+
+The rehearsals already constrain the pilot. The 60~s cadence with a whole-depth
+stack is achievable on this system. High excitation causes fast bleaching and is
+associated with loss of worm movement, so the pilot uses the lowest usable 561~nm
+excitation, measured in mW, and avoids the 488~nm line. Focus must be held by PFS,
+a sealed and equilibrated mount, or a Z range wide enough to absorb drift. Bleaching
+and phototoxicity are distinct: signal loss alone does not show harm, which is why
+phototoxicity is judged only from development and hatching relative to CONTROL.
+
+\subsection*{Limitations}
+The pilot is not powered to show equivalence or safety. Comparison with Duncan
+et al.\ is contextual, because their raw data are not matched to ours in strain
+handling, optics, mounting or analysis. Our objective differs from the
+water-immersion optics typical of light-sheet embryo imaging, and the stack time was
+measured with a $10\times$ objective and must be confirmed with the $60\times$
+objective and final zoom. Late-stage lineaging is limited by embryo movement and
+nuclear crowding, and missing data there are not missing at random. Manual audit
+effort rises steeply with nucleus number, so late-stage frames are sampled more
+sparsely and their accuracy estimates are less certain. The rehearsals used
+free-moving worms rather than embryos, unmeasured power at the sample, and
+different slides for the low- and high-dose conditions without an unexposed control
+field; their movement measures are descriptive and are confounded by worms leaving
+the field or focal plane.
+
+\begin{thebibliography}{9}
+\bibitem{duncan2019} Duncan LH, Moyle MW, Shao L, et al. Isotropic light-sheet
+microscopy and automated cell lineage analyses to catalogue \textit{Caenorhabditis
+elegans} embryogenesis with subcellular resolution. \textit{J Vis Exp}.
+2019;148:e59533. \url{https://doi.org/10.3791/59533}
+
+\bibitem{tran2026} Tran MP, Peinado N, Zhao Z, Shah PK. Inference of
+lineage-resolved cell identities in uncompressed \textit{C.\ elegans} embryos.
+\textit{microPublication Biology}. 2026.
+\url{https://pmc.ncbi.nlm.nih.gov/articles/PMC13242636/}
+
+\bibitem{nikon} Nikon. AX / AX R with NSPARC (product information).
+\url{https://www.microscope.healthcare.nikon.com/products/confocal-microscopes/ax/ax-ax-r-with-nsparc}
+
+\bibitem{sugawara2021data} Sugawara K, \c{C}evrim \c{C}, Averof M. Supplementary data
+(Fluo-N3DH-CE image and tracking data). Zenodo. 2021.
+\url{https://doi.org/10.5281/zenodo.4630933}
+\end{thebibliography}
+
+\end{document}

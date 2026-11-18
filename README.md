@@ -29,6 +29,7 @@ The study ends with an answer to: *How far into embryogenesis can NSPARC recover
 
 ## What this repository contains
 
+- **[Manuscript draft (PDF)](docs/manuscript.pdf)**: built automatically from [`docs/paper/main.tex`](docs/paper/main.tex), which is synced from Overleaf every night (edit in Overleaf, not here)
 - [Brief for lab manager](docs/LAB_MANAGER_BRIEF.md)
 - [Step-by-step experimental protocol](docs/PROTOCOL.md)
 - [Published benchmarks and downloadable atlas resources](docs/BASELINES.md)
@@ -39,6 +40,20 @@ The study ends with an answer to: *How far into embryogenesis can NSPARC recover
 - [Empty CSV templates](data/templates/)
 - [`src/celegans_benchmark/`](src/celegans_benchmark/) — dependency-free CSV validation, descriptive metrics, and optional figures
 - [`tests/`](tests/) and GitHub Actions CI
+
+Figure PNGs under `docs/figures/` and the generated `docs/manuscript.pdf` use
+Git LFS. After cloning, install Git LFS and retrieve the assets:
+
+```bash
+git lfs install
+git lfs pull
+```
+
+The PDF build workflows enable LFS during checkout so generated PDFs are stored
+and uploaded through LFS. The Overleaf source stays in `docs/paper/`. LFS applies
+from the conversion forward; earlier commits retain their original binary blobs.
+Raw ND2 locations and SHA-256 checksums are recorded in
+[`data/manifests/nd2_sha256_2026-11-17.csv`](data/manifests/nd2_sha256_2026-11-17.csv).
 
 ## Get started
 
@@ -68,6 +83,12 @@ python -m celegans_benchmark checksum --file D:\raw\embryo01.nd2
 # Compare recorded checksums with the files (blank values are "not recorded", not failures)
 python -m celegans_benchmark verify-raw --data-dir D:\private\run1 --raw-root D:\raw
 
+# Inventory all ND2 files in a folder at their current locations (PowerShell)
+python -m celegans_benchmark checksum --directory 'D:\Qurratul_Celegans\TimelapsePath' --manifest data/manifests/nd2_sha256_2026-11-17.csv
+
+# Re-read every file and compare its size and SHA-256 with the manifest
+python -m celegans_benchmark verify-raw --manifest data/manifests/nd2_sha256_2026-11-17.csv
+
 # Choose audit frames per stage BEFORE reviewing any results (fixed seed; list is never overwritten).
 # Input: a time_point,spots file exported from the tracker. Record the printed SHA-256.
 python -m celegans_benchmark select-frames --spot-counts D:\private\run1\E01_spots.csv --output D:\private\run1\E01_audit_frames.csv --per-stage 2 --seed 20261022
@@ -75,6 +96,28 @@ python -m celegans_benchmark select-frames --spot-counts D:\private\run1\E01_spo
 # After counting: check that tp+fp of each audited frame matches the tracker's spot count
 python -m celegans_benchmark check-audit --data-dir D:\private\run1 --embryo-id E01 --spot-counts D:\private\run1\E01_spots.csv
 ```
+
+`checksum --directory` creates a standalone raw-file inventory with the absolute path,
+byte size, modification time, SHA-256, and checksum time in UTC. It includes `.nd2`
+files directly inside the folder. Add `--recursive` to include subfolders, or repeat
+`--directory` for several locations. `checksum --file` continues to print a single
+hash and can also write a one-file inventory with `--manifest`.
+
+Each file is read in bounded chunks and checked for changes during hashing. The
+manifest is published after all files pass and their metadata is checked again.
+Choose a new manifest filename for each snapshot; an existing baseline is preserved.
+A checksum records file integrity at that time. Confirm ND2 readability and
+acquisition completion separately.
+
+`verify-raw --manifest` requires a valid size and hash for every row and exits `1`
+if any file is missing, differs, changes during the read, or cannot be checked.
+Relative paths in a standalone manifest use its containing folder, or `--raw-root`
+when supplied. The earlier `--data-dir` behavior for embryo acquisition tables is
+preserved, including its `not_recorded` and skipped statuses.
+
+The November 17 manifest covers the 17 existing files in `TimelapsePath`, including
+rehearsals and setup captures. It is a file inventory without embryo assignments.
+The raw ND2 files remain at their recorded paths on the microscope PC.
 
 `validate` and `report` print `WARNING` lines (exit code unchanged) when an imaged embryo has a blank `power_at_sample_mw`, `raw_sha256` or `nsparc_mode`, or when `measured_interval_s` is slower than `planned_interval_s` by more than `--interval-tolerance` (default 0.05 = 5%).
 
@@ -87,6 +130,12 @@ After an acquisition, check the time-lapse itself (needs the optional extra `pip
 ```bash
 # Interval, late/missing stacks, stack duration and signal over time, from the ND2 file
 python -m celegans_benchmark run-check --nd2 D:\raw\embryo01.nd2 --planned-interval 60 --out D:\private\run1\run_check
+```
+
+For multi-channel or single-plane time-lapses (which `run-check` does not accept), `scripts/analyze_timelapse.py` (needs `pip install -e ".[nd2,plots]"`) reports timing, per-channel signal and bleaching (retention, half-time), worm movement (transmitted-light motion and 60 s fluorescent-mask turnover, with movement maps) and a montage per file, plus `comparison.png` and `comparison_movement.png` across files:
+
+```bash
+python scripts/analyze_timelapse.py --out results/timelapse_analysis D:\raw\run1.nd2 D:\raw\run2.nd2
 ```
 
 `scripts/fiji_fading_curve.ijm` is a Fiji macro (Plugins > Macros > Run) that plots signal over time from the max projection of an ND2 time-lapse, for checking the same file visually.
