@@ -1,0 +1,143 @@
+{
+  "review_date": "2026-11-18",
+  "snapshot_generated_at": "2026-11-18T17:41:14.683700-05:00",
+  "base_commit": "db36a6c",
+  "working_branch": "codex/aml18-data-review",
+  "uncommitted_working_tree": true,
+  "script": "scripts/review_acquired_data.py",
+  "script_sha256": "4f0c4434adf967f78444fe040661c600a954dde9255095e89697d68e92d4868e",
+  "raw_location_reference": "data/manifests/nd2_sha256_2026-11-17.csv",
+  "prior_manifest_sha256": "372a3da59d25a997d7570ca775815367c89883b3ff61f97da246fb5afbd51ac7",
+  "raw_files": 17,
+  "raw_bytes": 73330962432,
+  "raw_files_modified": false,
+  "raw_sha256_reverified": false,
+  "environment": {
+    "python": "3.12.10",
+    "nd2": "0.12.0",
+    "numpy": "2.5.4",
+    "matplotlib": "3.11.2"
+  },
+  "reproduce_argv": [
+    "python",
+    "scripts/review_acquired_data.py",
+    "--raw-root",
+    "<raw-storage-folder>",
+    "--manifest",
+    "data/manifests/nd2_sha256_2026-11-17.csv",
+    "--out",
+    "<new-local-output-folder>",
+    "--overnight",
+    "Celegans_01_stack_overnightslip-1112.nd2"
+  ],
+  "inventory_method": "All time-point starts; at most five evenly spaced pixel time points per file, including every Z plane at those points.",
+  "timing_note": "Native ND2 acquisition cache; frame_metadata and events share this timebase, not independent exposure clocks.",
+  "position_note": "Configured frame positions may be static; explicit recorded device events are kept separately. Event Z ranges in stack files include intentional scans.",
+  "overnight_filename": "Celegans_01_stack_overnightslip-1112.nd2",
+  "overnight_method": {
+    "sampled_frames": 185,
+    "total_frames": 5401,
+    "sampling": "every 5 minutes plus first five, preview and last frames; not all pixels/time points",
+    "baseline_first5": {
+      "GFP_p99_9_minus_median": 149.6,
+      "RFP_p99_9_minus_median": 105.6,
+      "TD_normalized_laplacian_variance": 0.009189672835334345
+    },
+    "checkpoints": [
+      {
+        "t_index": 0,
+        "elapsed_min": 0.0,
+        "GFP_p99_9_minus_median_relative_first5": 1.0294117647058825,
+        "RFP_p99_9_minus_median_relative_first5": 1.0321969696969697,
+        "TD_normalized_laplacian_variance_relative_first5": 1.0082230984287484
+      },
+      {
+        "t_index": 30,
+        "elapsed_min": 5.0000000499999935,
+        "GFP_p99_9_minus_median_relative_first5": 0.7286096256684492,
+        "RFP_p99_9_minus_median_relative_first5": 0.6534090909090909,
+        "TD_normalized_laplacian_variance_relative_first5": 0.7833785578160783
+      },
+      {
+        "t_index": 90,
+        "elapsed_min": 15.000000149999993,
+        "GFP_p99_9_minus_median_relative_first5": 0.37433155080213903,
+        "RFP_p99_9_minus_median_relative_first5": 0.2935606060606061,
+        "TD_normalized_laplacian_variance_relative_first5": 0.4999803540150335
+      },
+      {
+        "t_index": 180,
+        "elapsed_min": 30.00000029999999,
+        "GFP_p99_9_minus_median_relative_first5": 0.18716577540106952,
+        "RFP_p99_9_minus_median_relative_first5": 0.15151515151515152,
+        "TD_normalized_laplacian_variance_relative_first5": 0.32950240330741004
+      },
+      {
+        "t_index": 360,
+        "elapsed_min": 60.00000060000001,
+        "GFP_p99_9_minus_median_relative_first5": 0.10026737967914438,
+        "RFP_p99_9_minus_median_relative_first5": 0.10416666666666667,
+        "TD_normalized_laplacian_variance_relative_first5": 0.2310238270112842
+      },
+      {
+        "t_index": 720,
+        "elapsed_min": 120.00000119999999,
+        "GFP_p99_9_minus_median_relative_first5": 0.08689839572192513,
+        "RFP_p99_9_minus_median_relative_first5": 0.0946969696969697,
+        "TD_normalized_laplacian_variance_relative_first5": 0.2953223675556556
+      },
+      {
+        "t_index": 1080,
+        "elapsed_min": 180.00000179999998,
+        "GFP_p99_9_minus_median_relative_first5": 0.03342245989304813,
+        "RFP_p99_9_minus_median_relative_first5": 0.04734848484848485,
+        "TD_normalized_laplacian_variance_relative_first5": 0.208236928557223
+      },
+      {
+        "t_index": 5400,
+        "elapsed_min": 900.000009,
+        "GFP_p99_9_minus_median_relative_first5": 0.020053475935828877,
+        "RFP_p99_9_minus_median_relative_first5": 0.01893939393939394,
+        "TD_normalized_laplacian_variance_relative_first5": 0.17612610213358457
+      }
+    ],
+    "limits": [
+      "Whole-field proxies depend on image content, motion, focus and noise.",
+      "Signal loss is not isolated photobleaching and does not establish death.",
+      "Stable recorded stage values do not rule out optical/sample drift."
+    ]
+  },
+  "fluorescence_proxy": "p99.9 minus median; normalized to mean of first five frames; not isolated bleaching",
+  "td_sharpness_proxy": "variance of four-neighbour discrete Laplacian / squared mean intensity; normalized to first five frames; not a causal diagnosis",
+  "figures": {
+    "single_worm_10min.png": {
+      "source_output": "Celegans_01_stack_timing1111_sampled.png",
+      "sha256": "ff2f907d83c964eeef3f0e905356bc7b7bec9990b7a025a33efc264f0268d085"
+    },
+    "overnight_early.png": {
+      "source_output": "overnight_early_samples.png",
+      "sha256": "90a2af51bb5cb0d5e381a6765276ec62fced384b7554a6c55c749faf152cb6f1"
+    },
+    "overnight_qc.png": {
+      "source_output": "overnight_sampled_qc.png",
+      "sha256": "33705ccb472dbc5f1f9ba4a7eb0c8deb3e2a71eec708c21aaa1c97af883882cd"
+    },
+    "stack_8h.png": {
+      "source_output": "AML18_rehearsal_timelapse_60s_8h_overnight_sampled.png",
+      "sha256": "1d4bc3b93946653f869a3d5b5f77a600adf0719a8b0b1b07a0f9263867950fad"
+    }
+  },
+  "derived_files_sha256": {
+    "inventory.csv": "9ec2a2a5e1be268a9c9d59349a05cb10d65bd557f82bb1ab5604f2881d3321a5",
+    "overnight_samples.csv": "d02ea01bb07e7f7cf5836c5553c939c5e8f82383d87f535199bfe0f485473814"
+  },
+  "claims_not_established": [
+    "full pixel integrity",
+    "new raw checksum verification",
+    "organism survival/death",
+    "causal phototoxicity",
+    "neuron identity",
+    "embryonic lineage accuracy",
+    "independent biological replicates"
+  ]
+}

@@ -1,7 +1,7 @@
 # C. elegans NSPARC–diSPIM Benchmark
 
 **BioNanomics | Experimental protocol and reproducible analysis scaffold**  
-**Status:** Proposed / not yet executed. No biological data or validation results are included.
+**Status:** MCP software checks and non-study worm-imaging rehearsals are documented. The 17 existing recordings have received a metadata and sampled-image review. The embryo pilot and biological lineage benchmark remain pending.
 
 ## Research question
 
@@ -9,13 +9,17 @@ Can a Nikon Ti2/AX confocal microscope equipped with **NSPARC** provide sufficie
 
 NSPARC's 25-element detector improves photon collection and image-scanning microscopy reconstruction; it **does not** change confocal illumination into a light sheet. This project tests *biological fitness for purpose*, not whether the instruments are optically equivalent.
 
+## Current work
+
+AML18 is the currently available strain, and the existing recordings are non-study worm-imaging rehearsals. The next analysis is a bounded manual visibility and 2D spot-tracking feasibility review of the existing 10-minute movie, with uncertainty and held-out frames; it is not an embryonic lineage result. See the [acquired-data review](docs/DATA_REVIEW_2026-11-18.md) and [research roadmap](docs/RESEARCH_ROADMAP.md) for the evidence, limitations and gates before a new long run. The whole-embryo question below requires a suitable ubiquitous nuclear reporter.
+
 ## Published target
 
 Duncan et al. (2019, [DOI:10.3791/59533](https://doi.org/10.3791/59533)) acquired 10 **BV514** `ujIs113` embryos with ubiquitous mCherry-histone nuclear labeling, at **20 °C**, **one 3D volume per embryo per minute**, over **7.5 hours** (**451 volumes**). They assessed developmental timing and embryo viability, finding no detectable phototoxicity under their reported conditions.
 
 That study is a **published observational benchmark**, not matched raw data collected on our microscope. Any direct instrument-level claim requires a head-to-head experiment with comparable embryos, reporters, sampling, optical objectives, mounting, and analysis pipelines.
 
-## Study outline
+## Future embryo study outline
 
 | Condition | Imaging | Goal |
 |---|---|---|
@@ -29,7 +33,10 @@ The study ends with an answer to: *How far into embryogenesis can NSPARC recover
 
 ## What this repository contains
 
-- **[Manuscript draft (PDF)](docs/manuscript.pdf)**: built automatically from [`docs/paper/main.tex`](docs/paper/main.tex), which is synced from Overleaf every night (edit in Overleaf, not here)
+- **[Manuscript draft (PDF)](docs/manuscript.pdf)**: built automatically from [`docs/paper/main.tex`](docs/paper/main.tex), which is synced from Overleaf every night. Mirror branch-local source edits to Overleaf before merge so the next sync does not overwrite them.
+- [Review of the 17 acquired ND2 files](docs/DATA_REVIEW_2026-11-18.md), with portable [review metadata](data/reviews/2026-11-18/)
+- [Research roadmap: current AML18 work and future embryo pilot](docs/RESEARCH_ROADMAP.md)
+- [MCP software validation](docs/MCP_VALIDATION.md) and [NSPARC test limitations](docs/MCP_NSPARC_VALIDATION.md)
 - [Brief for lab manager](docs/LAB_MANAGER_BRIEF.md)
 - [Step-by-step experimental protocol](docs/PROTOCOL.md)
 - [Published benchmarks and downloadable atlas resources](docs/BASELINES.md)
