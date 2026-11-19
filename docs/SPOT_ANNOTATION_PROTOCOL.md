@@ -70,6 +70,34 @@ The plan-generation module defines these schemas and the frame design. It does n
 
 ## Before evaluating a tracker
 
+The selected S01, S02, ... targets are a partial reference set, not an exhaustive
+annotation of the field. Primary outcomes are selected-target recovery/visibility
+coverage, localization error conditional on a valid match, and correspondence
+failures over manually evaluable transitions. Algorithm detections outside this
+selected set have unknown reference status and must not be counted as false
+positives merely because they lack a selected-target label. Whole-field detector
+precision/recall requires a separate exhaustive reference in predefined
+frames/regions, with its own matching rule and denominator.
+
+Use the frozen selected-target roster to define these denominators:
+
+- Annotation coverage: reviewed target/frame pairs divided by all planned pairs;
+  missing rows remain not reviewed.
+- Visibility coverage: visible, uncertain and not-visible judgments among
+  reviewed pairs, with counts, reasons and durations. Report unreviewed pairs
+  separately.
+- Selected-target recovery: correctly matched predictions divided by visible,
+  unambiguous selected-target observations under the locked matching rule.
+- Localization: median and interquartile distance in micrometres for correctly
+  matched visible observations, alongside matched and missed counts. This error
+  is conditional on a successful match.
+- Correspondence: correct links divided by human-confirmed eligible adjacent-frame
+  transitions; report identity switches, breaks and abstentions separately.
+
+The fixed secondary-review frame list supports visibility and centroid agreement.
+Independent link agreement requires separately prespecified consecutive-frame
+pairs or short contextual clips; isolated frames do not validate correspondence.
+
 Leave `matching_tolerance_um` **null** in the frozen frame plan. No scientifically justified matching distance is known yet. Estimate reviewer agreement on the development subset, define a matching rule and tolerance from that evidence, then lock the analysis parameters **before evaluation**. Store that decision in a versioned analysis-parameter record with its own hash; do not edit this plan in place to fill the null field or choose a tolerance from the evaluation scores.
 
 Use development data to fit one simple baseline. Do not use buffer or evaluation results to select thresholds, repair the tracker or cherry-pick targets. Evaluation annotations may be recorded manually, but they must not be fed back into fitting. Any change after evaluation creates a new, explicitly exploratory development round; it does not preserve the original held-out claim.

@@ -28,7 +28,7 @@ Choose one segmentation/spot-linking method and record its version and exact par
 
 Report separately:
 
-- Detection precision and recall on evaluable annotated frames, including the matching rule and denominator.
+- Selected-target recovery and visibility coverage, with a matching rule and explicit denominators. The small selected-spot reference is not exhaustive whole-field truth; whole-field detector precision/recall requires separate exhaustive annotation in predefined frames/regions.
 - Localization error in micrometres for matched spots.
 - Identity switches and track breaks over manually reviewed transitions, with explicit denominators.
 - Visibility/evaluable-frame coverage and durations lost to ambiguity or depth, rather than a score restricted to easy visible frames.

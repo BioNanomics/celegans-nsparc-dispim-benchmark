@@ -3,6 +3,10 @@
 \usepackage{booktabs}
 \usepackage{array}
 \usepackage{xcolor}
+\usepackage{graphicx}
+% Overleaf: upload the three paper PNGs into a folder named figures.
+% Repository builds resolve the same files from the existing LFS asset folder.
+\graphicspath{{figures/}{../figures/paper_2026-11-18/}}
 \usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue]{hyperref}
 
 % Visible reminders: delete every \todo before submission.
@@ -191,14 +195,15 @@ Portable records and the sampling limits are retained in
 represented as a complete raw-data audit.
 
 \subsection{Prospective AML18 spot-annotation case study}\label{sec:aml18-annotation}
-A separate two-dimensional feasibility case study was prepared on 2026-11-18
-using \texttt{Celegans\_01\_stack\_timing1111.nd2}. This AML18 rehearsal contains
+A separate two-dimensional feasibility case study was prepared on 2026-11-18.
+The source recording is \nolinkurl{Celegans_01_stack_timing1111.nd2}.
+This AML18 rehearsal contains
 151 single-plane time points at approximately 4~s intervals over 10~min, with
 GFP, RFP and TD channels, $1024\times1024$ pixels and a recorded calibration of
 0.50669~\textmu m per pixel at $10\times$ NA~0.45. The saved NSPARC processing
 mode is Live Deconvolution. The source SHA-256, native elapsed timestamps,
 calibration and review design are retained in a frozen, hashed frame plan in
-\texttt{data/annotations/aml18\_1111\_v1/}.
+\nolinkurl{data/annotations/aml18_1111_v1/}.
 At kit creation the annotation table contained no observations and all 151
 frame-review records were marked not reviewed; manual reference labels,
 reviewer-agreement estimates and tracker performance results remain pending.
@@ -227,12 +232,34 @@ exports and any subsequent reconciliation will be retained separately.
 Development-frame agreement will inform the localization-matching tolerance and
 annotation rules, which will be locked in a separate analysis-parameter record
 before evaluation. The evaluation subset will not be used to choose thresholds
-or repair the tracker. Reporting will distinguish localization and correspondence
-errors from uncertain or non-visible intervals. All frames belong to one movie;
+or repair the tracker. Reporting will distinguish selected-target recovery,
+localization and correspondence errors from uncertain or non-visible intervals.
+The selected spots are a partial reference set; whole-field detector precision
+and recall would require exhaustive annotation of predefined frames or regions.
+All frames belong to one movie;
 they are not independent biological replicates. Temporary spot correspondence
 does not establish anatomical neuron identities, calcium activity, embryonic
 lineages or organism viability. The detailed protocol is retained in
-\texttt{docs/SPOT\_ANNOTATION\_PROTOCOL.md}.
+\nolinkurl{docs/SPOT_ANNOTATION_PROTOCOL.md}.
+
+Figure~\ref{fig:aml18-candidate} shows the field selected for this prospective
+annotation exercise. It illustrates the available image information, not a
+completed tracking result.
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\linewidth]{fig1_aml18_candidate.png}
+\caption{\textbf{Candidate AML18 recording for prospective two-dimensional spot
+annotation.} Single-plane GFP, RFP and TD views at approximately 0, 5 and 10~min
+(frames 0, 75 and 150 of 151), acquired at $10\times$ NA~0.45 and saved in Live
+Deconvolution mode. Each channel uses its initial frame's 1st--99.8th percentile
+grayscale limits, fixed across time; displayed brightness is not comparable
+between channels. Panels show the full recorded field without tracking overlays.
+This qualitatively selected example does not establish spot identities or
+tracking accuracy. Recorded sampling, 0.5067~\textmu m per pixel; scale bars,
+100~\textmu m.}
+\label{fig:aml18-candidate}
+\end{figure}
 
 \subsection{Manual validation of the planned embryo pilot}
 Audit frames are chosen before any results are reviewed. For each embryo, the
@@ -249,7 +276,7 @@ by a rule fixed before auditing \todo{rule}, and uncertain counts are flagged.
 Division links are verified separately as correct or incorrect.
 \todo{Number of frames per stage; number of reviewers.}
 
-\subsection{Outcome measures}
+\subsection{Outcome measures of the planned embryo pilot}
 \begin{itemize}
   \item Recall $=\mathrm{TP}/(\mathrm{TP}+\mathrm{FN})$, precision
         $=\mathrm{TP}/(\mathrm{TP}+\mathrm{FP})$ and
@@ -267,7 +294,7 @@ by itself isolate photobleaching from motion, defocus or changes in the observed
 population. It is not used as a measure of phototoxicity, which is assessed through
 developmental timing and hatching relative to CONTROL embryos.
 
-\subsection{Provisional feasibility targets}
+\subsection{Provisional feasibility targets of the planned embryo pilot}
 We pre-specify two internal targets, not literature-derived standards: recall of at
 least 95\% on audited frames with at most 100 nuclei, and at least 90\% of verified
 links correct. Targets are judged per group, with each embryo's own result reported
@@ -358,6 +385,40 @@ encoder trace. Thus declining image quality and fluorescence are observed, but
 the data do not identify drying, specimen movement, optical/thermal drift,
 photobleaching or organism death as their cause. Apparent-motion measures become
 unreliable as detail and contrast are lost.
+
+Figures~\ref{fig:overnight-images} and~\ref{fig:overnight-qc} present selected
+images and sampled quality measures from this same 15~h recording. They document
+the loss of interpretable detail that a focus-stability pilot must address.
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\linewidth]{fig2_overnight_images.png}
+\caption{\textbf{Early image-quality deterioration in the 15~h CF-mode rehearsal.}
+Full-field single-plane TD and GFP images at 0, 15, 60 and 180~min (frames 0, 90,
+360 and 1080 of 5401), recorded at $10\times$ NA~0.45. Each channel uses fixed
+initial-frame 1st--99.8th percentile grayscale limits across time. Decreasing
+fluorescent contrast and changing TD detail are visible, but these images do not
+identify optical or specimen drift, motion, bleaching or other causes, and do not
+establish organism death. Recorded sampling, 0.5691~\textmu m per pixel; scale
+bars, 100~\textmu m.}
+\label{fig:overnight-images}
+\end{figure}
+
+\begin{figure}[!tbp]
+\centering
+\includegraphics[width=\linewidth]{fig3_overnight_qc.png}
+\caption{\textbf{Sampled fluorescence and TD sharpness proxies from the same
+15~h recording.} Panels show the first 180~min (A) and the complete 900~min span
+(B), using 185 of 5401 frames: five-minute samples plus the first five, preview
+and final frames. GFP and RFP contrast is the 99.9th percentile minus the median;
+TD sharpness is the variance of a four-neighbour discrete Laplacian divided by
+squared mean intensity. Each measure is normalized to its own mean over the first
+five frames (0--40~s). Lines connect sampled observations, not a fitted decay
+model. The two panels are views of one recording, not biological replicates;
+these image-content-dependent proxies do not isolate bleaching, establish
+viability or diagnose the cause of image deterioration.}
+\label{fig:overnight-qc}
+\end{figure}
 
 \subsection{Embryo pilot}
 \todo{No embryo data yet. Report every embryo individually (group, settings, stage depth,

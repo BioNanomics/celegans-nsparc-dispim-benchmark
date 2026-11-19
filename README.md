@@ -41,6 +41,7 @@ The study ends with an answer to: *How far into embryogenesis can NSPARC recover
 - **[Manuscript draft (PDF)](docs/manuscript.pdf)**: built automatically from [`docs/paper/main.tex`](docs/paper/main.tex), which is synced from Overleaf every night. Mirror branch-local source edits to Overleaf before merge so the next sync does not overwrite them.
 - [Review of the 17 acquired ND2 files](docs/DATA_REVIEW_2026-11-18.md), with portable [review metadata](data/reviews/2026-11-18/)
 - [Research roadmap: current AML18 work and future embryo pilot](docs/RESEARCH_ROADMAP.md)
+- [Manuscript figures, Overleaf upload steps and next research decisions](docs/PAPER_FIGURES.md)
 - [MCP software validation](docs/MCP_VALIDATION.md) and [NSPARC test limitations](docs/MCP_NSPARC_VALIDATION.md)
 - [Brief for lab manager](docs/LAB_MANAGER_BRIEF.md)
 - [Step-by-step experimental protocol](docs/PROTOCOL.md)
