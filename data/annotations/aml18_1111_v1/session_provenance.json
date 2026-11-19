@@ -1,0 +1,22 @@
+{
+  "created_at": "2026-11-18T23:12:13.783071+00:00",
+  "source_name": "Celegans_01_stack_timing1111.nd2",
+  "source_sha256": "92b17d8a92f5eebf5f2085a7b22d3504c47f22adfeb2640ee245a6aa7d1a2e91",
+  "source_sha256_freshly_verified": true,
+  "source_bytes": 950915072,
+  "source_unchanged_during_export": true,
+  "prior_manifest_sha256": "372a3da59d25a997d7570ca775815367c89883b3ff61f97da246fb5afbd51ac7",
+  "plan_sha256": "2e24b29daa569a134d825ecc7099b7357aea455ff16dd9a7bc2ecf6552276dbb",
+  "builder_sha256": "7428d308c0b1f6987741aa468737da1599cb618631e2bd1c4e0551694f989b49",
+  "frame_plan_module_sha256": "d658ea93e40769a9281a98785e09f7ad98690dcb77b6feef908e03601a4206ac",
+  "viewer_template_sha256": "fd2005b38a1e1d8305c673b7a209816ac30088e7bd79627accb89262e468c8a5",
+  "nd2_version": "0.12.0",
+  "display_transform": "First-frame 1st/99.8th percentile, fixed linear 12-bit to 8-bit display; no resize",
+  "saved_mode": "Live Deconvolution",
+  "annotations_completed": 0,
+  "frames_reviewed": 0,
+  "status": "Prepared for manual review; no human reference annotations yet",
+  "viewer_initial_template_sha256": "7b13ab46294823d5da51d7fa9c820c47e43c644cd6533c61bd358049c7bdffdc",
+  "viewer_updated_at": "2026-11-18T23:20:07.560202+00:00",
+  "viewer_update_reason": "Explicit Enter commit and normalization for frame-number navigation; source planes, frame plan and blank observations unchanged."
+}

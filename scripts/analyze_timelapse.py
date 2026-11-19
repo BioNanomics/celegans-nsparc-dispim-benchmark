@@ -7,8 +7,9 @@ per_frame.csv, summary.json, signal.png, movement.png, movement_maps.png, montag
 Movement measures (descriptive; compare a run with its own start, not runs with each other):
 - TD_motion_frac: fraction of transmitted-light pixels that change between consecutive
   analysed frames by more than 6 robust SDs of the frame difference (needs a TD channel).
-- <channel>_turnover_60s: 1 - overlap of the fluorescent worm masks ~60 s apart
-  (|A xor B| / |A or B|). Uses masks, not intensities, so bleaching is not counted as movement.
+- <channel>_turnover_60s: 1 - overlap of fluorescent masks ~60 s apart
+  (|A xor B| / |A or B|). Re-thresholding, bleaching, defocus and changing field
+  occupancy can change these masks without physical motion.
 
 Usage:
     python scripts/analyze_timelapse.py --out results/timelapse_analysis file1.nd2 [file2.nd2 ...]
@@ -217,7 +218,7 @@ def analyze(path: Path, out_root: Path, step: int) -> dict:
             for s in win_starts:
                 if s <= k < s + win:
                     img = fr[map_src].astype(np.float32)
-                    if not trans:  # fluorescence: normalise so bleaching does not look like motion
+                    if not trans:  # Reduce global brightness changes; fading/focus remain confounds.
                         img /= max(float(np.percentile(img, 99.9)), 1.0)
                     win_frames[s].append((t, img))
             rows.append(row)
@@ -318,7 +319,7 @@ def analyze(path: Path, out_root: Path, step: int) -> dict:
             ax.set_xlabel("time (min)")
             ax.set_ylim(bottom=0)
             ax.legend(fontsize=8)
-        fig.suptitle(f"{path.name}: movement (higher = more moving)", fontsize=9)
+        fig.suptitle(f"{path.name}: image-change proxies (not validated motion)", fontsize=9)
         fig.tight_layout()
         fig.savefig(out / "movement.png", dpi=110)
         plt.close(fig)
@@ -342,7 +343,7 @@ def analyze(path: Path, out_root: Path, step: int) -> dict:
             for ax in axs[:, j]:
                 ax.set_xticks([])
                 ax.set_yticks([])
-        fig.suptitle(f"{path.name}: bottom = SD over window, same scale (bright = moving)", fontsize=9)
+        fig.suptitle(f"{path.name}: bottom = SD over window, same scale (bright = image change)", fontsize=9)
         fig.tight_layout()
         fig.savefig(out / "movement_maps.png", dpi=90)
         plt.close(fig)
@@ -414,9 +415,9 @@ def compare_movement_plot(out_root: Path, summaries: list[dict]) -> None:
         return
     ax.axhline(1, color="grey", ls=":", lw=0.8)
     ax.set_xlabel("time (min, centre of 30-min bin)")
-    ax.set_ylabel("movement, fraction of first 30 min")
+    ax.set_ylabel("mask turnover, fraction of first 30 min")
     ax.set_ylim(bottom=0)
-    ax.set_title("Worm movement across runs (60 s fluorescent-mask turnover)")
+    ax.set_title("Fluorescent-mask turnover across runs (not validated motion)")
     ax.legend(fontsize=7, loc="upper right")
     fig.tight_layout()
     fig.savefig(out_root / "comparison_movement.png", dpi=110)

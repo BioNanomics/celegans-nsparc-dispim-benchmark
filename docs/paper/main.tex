@@ -3,6 +3,10 @@
 \usepackage{booktabs}
 \usepackage{array}
 \usepackage{xcolor}
+\usepackage{graphicx}
+% Overleaf: upload the three paper PNGs into a folder named figures.
+% Repository builds resolve the same files from the existing LFS asset folder.
+\graphicspath{{figures/}{../figures/paper_2026-11-18/}}
 \usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue]{hyperref}
 
 % Visible reminders: delete every \todo before submission.
@@ -27,10 +31,12 @@ verified nuclear detection, lineage-link correctness, developmental timing and
 hatching. Audit frames are selected per developmental stage before review, and all
 analysis uses an open, tested pipeline that records the code version and inputs of
 every report. The study is a feasibility benchmark, not an equivalence or safety trial.
-In instrument rehearsals on non-study worms, a 41-plane stack (28.6~s) fitted the
-60~s interval for 8~h with no missed volumes, while high-excitation single-plane
-imaging caused rapid signal loss and loss of worm movement, supporting the use of
-low excitation in the pilot.
+In a $10\times$ CF-mode rehearsal on non-study worms, 481 saved 41-plane volumes
+had recorded spacing near 60~s over 8~h; this does not establish the timing or
+image quality of the final embryo acquisition. Other rehearsals showed declining
+fluorescence and image-change measures, but differences in specimens, mounting
+and processing prevent attribution to excitation alone. These observations motivate
+controlled exposure and focus checks before the embryo pilot.
 \todo{Add one sentence of embryo results after the pilot.}
 \end{abstract}
 
@@ -60,6 +66,9 @@ recover high-confidence nuclear identities and divisions at a useful temporal ca
 without altering normal development?
 
 \section{Methods}
+The embryo methods below describe the planned pilot. Only the non-study
+instrument rehearsals and technical checks have been completed; no embryo
+feasibility or viability result is claimed.
 \subsection{Design and groups}
 Embryos are randomly assigned to three groups, blocked by imaging day, operator,
 strain and mounting batch: \textbf{NSPARC\_60s} (one whole-embryo Z stack every
@@ -79,9 +88,11 @@ nuclei are nested within embryos.
 Strain BV514 (\texttt{ujIs113}, ubiquitous mCherry--histone) is used where available.
 Two- to four-cell embryos are mounted using a locally validated preparation
 approved by the laboratory manager, at a target of 20\textdegree C with the measured
-temperature recorded. Because unsealed mounts lost focus during a 15~h rehearsal
-(Section~\ref{sec:rehearsal-results}), mounts for long runs are sealed against
-evaporation and equilibrated on the stage before acquisition starts.
+temperature recorded. Long-run mounts will limit evaporation and be equilibrated
+on the stage, with compression and gas exchange assessed under the laboratory's
+approved preparation. The 15~h rehearsal motivates a focus-stability check but
+does not identify the physical cause of its loss of sharpness
+(Section~\ref{sec:rehearsal-results}).
 \todo{Mounting chamber, buffer, sealing method and equilibration time, once the local SOP is fixed.}
 
 \subsection{Image acquisition}
@@ -101,16 +112,20 @@ closed between volumes. NSPARC is operated in \todo{CF or SR mode; whether
 summed-detector and pixel-reassignment reconstructions can both be produced from
 the same acquisition}. \todo{Final zoom and Z range.}
 
-At this format the software reports a frame time of about 0.49~s per plane. In
-rehearsals at the same scan format ($10\times$ objective, Section~\ref{sec:rehearsal}),
-a 41-plane stack took 28.3--28.7~s including Z motion (0.69~s per plane), leaving
-about 31~s spare in each 60~s interval. The achieved stack time is measured again on
-the first embryos with the $60\times$ objective and final zoom, and the 60~s arm is
-not attempted if a stack takes 60~s or longer.
+An earlier setup displayed a frame time of about 0.49~s per plane; that display
+value is not a timing validation of the final recipe. In the $10\times$ CF-mode
+41-plane rehearsals (Section~\ref{sec:rehearsal}), the median first-to-last
+plane-start span was 28.06~s in the 1~h recording and 27.90~s in the 8~h recording.
+These spans exclude the last exposure and return overhead and are not complete
+stack-cycle durations. A full stack is timed again on the first embryos with the
+final $60\times$ objective, zoom, depth coverage and processing settings. The 60~s
+arm is not attempted if the complete stack cycle takes 60~s or longer.
 
-Focus is held with the Perfect Focus System (PFS) where it can lock on the sample;
-the PFS state is recorded for every run. Without PFS, an unsealed slide drifted out
-of focus within minutes even though the objective position was unchanged
+Focus maintenance is validated on the embryo mount. The Perfect Focus System
+(PFS) is used where supported and able to lock, and its state and offset are
+recorded for every run. A lock alone does not establish that the embryo remains
+in focus throughout its depth. In the 15~h rehearsal, sharpness declined while
+recorded Z varied little and PFS reported out of range
 (Section~\ref{sec:rehearsal-results}). \todo{PFS lock and offset on embryo mounts.}
 
 Excitation is set to the lowest level that still gives usable nuclear detection,
@@ -123,35 +138,130 @@ embryo in a group is imaged identically. \todo{Measured power, achieved interval
 \subsection{Instrument rehearsals}\label{sec:rehearsal}
 Before the pilot, the acquisition chain was rehearsed on adult and larval worms that
 are not study samples: strain AML18 (\texttt{wtfIs3}, nuclear GFP and tagRFP in all
-neurons) and other worms on unsealed slides, not immobilized, at room temperature,
-with a Plan Apo $\lambda$D $10\times$ NA~0.45 objective. Two conditions were used:
+neurons~\cite{aml18}) and other worms on unsealed slides, not immobilized, at room
+temperature, with a Plan Apo $\lambda$D $10\times$ NA~0.45 objective. AML18 carries
+structural nuclear reporters, not a calcium indicator. The following nominal
+settings were used; they are not controlled biological comparison groups:
 \begin{itemize}
-  \item \textbf{Low dose} (2026-10-23/24): 561~nm at 3\% laser, 570--616~nm, CF mode,
+  \item \textbf{Lower excitation setting} (2026-10-23/24): 561~nm at 3\% laser,
+        570--616~nm, CF mode,
         $512\times512$ bidirectional, 41 planes at 0.75~\textmu m every 60~s, for 1~h
-        and 8~h, PFS off.
-  \item \textbf{High dose} (2026-11-10 and 11-12): 488~nm at 75.5\% and 561~nm at
-        45.9--51.4\% laser plus the TD channel, $1024\times1024$, a single plane every
-        4~s (2~h and 4~h) or 10~s (15~h), PFS off.
+        and 8~h. The saved channel name \texttt{mCherry} is an acquisition label;
+        for AML18 the red reporter is tagRFP.
+  \item \textbf{Higher excitation, 2~h and 4~h} (2026-11-10): 488~nm at 75.5\% and
+        561~nm at 51.4\% laser plus TD, a single plane every 4~s. Saved detector
+        metadata reports \texttt{NSPARC Mode: Live Deconvolution}. The 2~h image
+        size is $1024\times1024$ and the 4~h size is $1024\times672$.
+  \item \textbf{Higher excitation, 15~h} (2026-11-12): 488~nm at 75.5\% and 561~nm
+        at 45.9\% laser plus TD, CF mode, $1024\times1024$, a single plane every
+        10~s, with $2\times$ line integration and $2\times$ averaging. Recorded PFS
+        status is out of range throughout this recording.
 \end{itemize}
-Laser power at the sample was not measured in the rehearsals, so the two conditions
-are compared by settings only. Rehearsal data are used to check the acquisition
-chain and to choose settings; they are not study data and do not enter any
-outcome or feasibility target.
+Laser power at the sample was not measured in the rehearsals, so these are
+comparisons of nominal settings, not measured photodose. The saved processing
+modes also differ; their intensity and apparent-motion measures are not a matched
+raw-detector comparison. Rehearsal data are used to check the acquisition chain
+and to choose settings; they are not embryo study data and do not enter any
+embryo outcome or feasibility target.
 
-Each rehearsal file was analysed frame by frame from the raw ND2 with an
-accompanying script (\texttt{scripts/analyze\_timelapse.py}; Z stacks are
-max-projected). Timing was taken from the acquisition metadata. \emph{Signal} was
+The 1~h and 8~h stack recordings and the 2~h and 4~h single-plane recordings were
+analysed frame by frame from the ND2 files with an accompanying script
+(\texttt{scripts/analyze\_timelapse.py}; Z stacks are max-projected). Timing was
+taken from recorded ND2 acquisition timestamps, not an independent exposure clock.
+The per-frame metadata and event tables use the same timestamp cache, so agreement
+between them is not a second timing measurement. \emph{Apparent signal} was
 the mean of foreground pixels (above the frame median plus 6 median absolute
 deviations) minus the median, expressed as a fraction of the first five frames.
-\emph{Movement} was measured in two ways: the fraction of TD pixels that changed
-by more than six robust standard deviations between consecutive frames (high-dose
-runs only), and the turnover of the fluorescent foreground mask between frames
-60~s apart ($|A \oplus B|/|A \cup B|$), which uses masks rather than intensities so
-that bleaching is not counted as movement. Movement is reported as 30-min means
-relative to the first 30~min of the same run. Image sharpness was the
-variance of the Laplacian of the TD image, normalized by the squared mean intensity.
+\emph{Apparent movement} was summarized by the fraction of TD pixels that changed
+by more than six robust standard deviations between consecutive frames, and the
+turnover of the fluorescent foreground mask between frames about 60~s apart
+($|A \oplus B|/|A \cup B|$). Because the masks are re-thresholded in each frame,
+bleaching, noise, defocus and changing field occupancy can alter turnover without
+motion. These image-change proxies are reported as 30-min means relative to the
+first 30~min of the same run; they are not direct measurements of speed, viability
+or neuronal activity. Max projections also hide depth loss and movement during
+acquisition of a stack.
 
-\subsection{Manual validation}
+A separate reproducible review on 2026-11-18
+(\texttt{scripts/review\_acquired\_data.py}) inspected ND2 metadata and sampled
+images. For the 15~h recording, 185 of 5401 frames were sampled: every 5~min plus
+the first five frames. TD sharpness was the variance of a four-neighbour discrete
+Laplacian divided by the squared mean image intensity, normalized to the mean of
+the first five frames. Apparent fluorescence contrast was the per-frame 99.9th
+percentile minus the median, normalized to the same first-five-frame baseline.
+These whole-field proxies depend on image content, motion, focus and noise.
+Portable records and the sampling limits are retained in
+\texttt{data/reviews/2026-11-18/}; uninspected pixels or time points are not
+represented as a complete raw-data audit.
+
+\subsection{Prospective AML18 spot-annotation case study}\label{sec:aml18-annotation}
+A separate two-dimensional feasibility case study was prepared on 2026-11-18.
+The source recording is \nolinkurl{Celegans_01_stack_timing1111.nd2}.
+This AML18 rehearsal contains
+151 single-plane time points at approximately 4~s intervals over 10~min, with
+GFP, RFP and TD channels, $1024\times1024$ pixels and a recorded calibration of
+0.50669~\textmu m per pixel at $10\times$ NA~0.45. The saved NSPARC processing
+mode is Live Deconvolution. The source SHA-256, native elapsed timestamps,
+calibration and review design are retained in a frozen, hashed frame plan in
+\nolinkurl{data/annotations/aml18_1111_v1/}.
+At kit creation the annotation table contained no observations and all 151
+frame-review records were marked not reviewed; manual reference labels,
+reviewer-agreement estimates and tracker performance results remain pending.
+
+The prepared local viewer retains native image coordinates and supplies fixed
+8-bit display previews: each channel's first-frame 1st and 99.8th percentiles
+define a linear display range used for every frame, without resizing the images.
+The previews are display transformations, not raw-intensity measurements; the
+source ND2 is unchanged. Reviewers will assign temporary spot IDs and record
+GFP centroids, using RFP and TD for context. Each target/frame decision will be
+recorded as visible, uncertain or not visible; uncertainty and non-visibility
+require a reason. A missing annotation means not reviewed, not absence. Frame
+review is recorded separately from target visibility. Pixel-centre coordinates
+use the upper-left centre as $(0,0)$, with x as column and y as row; converted
+micrometre coordinates are relative to this image origin, not stage coordinates.
+
+Zero-based frames 0--59 (60 frames) form the development block, 60--74 (15 frames)
+form a temporal buffer excluded from fitting and scored evaluation, and 75--150
+(76 frames) form the evaluation block. Frames 0, 38, 75, 112 and 150 had already
+been qualitatively previewed; ``held out'' therefore means withheld from tracker
+fitting and threshold selection, not never seen. A deterministic SHA-256 ranking
+with seed 20261118 selects five development and five evaluation frames for
+independent secondary review, without using image quality. Reviewers' original
+exports and any subsequent reconciliation will be retained separately.
+
+Development-frame agreement will inform the localization-matching tolerance and
+annotation rules, which will be locked in a separate analysis-parameter record
+before evaluation. The evaluation subset will not be used to choose thresholds
+or repair the tracker. Reporting will distinguish selected-target recovery,
+localization and correspondence errors from uncertain or non-visible intervals.
+The selected spots are a partial reference set; whole-field detector precision
+and recall would require exhaustive annotation of predefined frames or regions.
+All frames belong to one movie;
+they are not independent biological replicates. Temporary spot correspondence
+does not establish anatomical neuron identities, calcium activity, embryonic
+lineages or organism viability. The detailed protocol is retained in
+\nolinkurl{docs/SPOT_ANNOTATION_PROTOCOL.md}.
+
+Figure~\ref{fig:aml18-candidate} shows the field selected for this prospective
+annotation exercise. It illustrates the available image information, not a
+completed tracking result.
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\linewidth]{fig1_aml18_candidate.png}
+\caption{\textbf{Candidate AML18 recording for prospective two-dimensional spot
+annotation.} Single-plane GFP, RFP and TD views at approximately 0, 5 and 10~min
+(frames 0, 75 and 150 of 151), acquired at $10\times$ NA~0.45 and saved in Live
+Deconvolution mode. Each channel uses its initial frame's 1st--99.8th percentile
+grayscale limits, fixed across time; displayed brightness is not comparable
+between channels. Panels show the full recorded field without tracking overlays.
+This qualitatively selected example does not establish spot identities or
+tracking accuracy. Recorded sampling, 0.5067~\textmu m per pixel; scale bars,
+100~\textmu m.}
+\label{fig:aml18-candidate}
+\end{figure}
+
+\subsection{Manual validation of the planned embryo pilot}
 Audit frames are chosen before any results are reviewed. For each embryo, the
 tracker's per-frame nucleus counts are used to select a fixed number of frames from
 each stage ($<16$, 16--49, 50--99, 100--199, $\geq 200$ nuclei) with a recorded
@@ -166,7 +276,7 @@ by a rule fixed before auditing \todo{rule}, and uncertain counts are flagged.
 Division links are verified separately as correct or incorrect.
 \todo{Number of frames per stage; number of reviewers.}
 
-\subsection{Outcome measures}
+\subsection{Outcome measures of the planned embryo pilot}
 \begin{itemize}
   \item Recall $=\mathrm{TP}/(\mathrm{TP}+\mathrm{FN})$, precision
         $=\mathrm{TP}/(\mathrm{TP}+\mathrm{FP})$ and
@@ -179,11 +289,12 @@ Division links are verified separately as correct or incorrect.
         separately and never counted as failures.
   \item Achieved interval, incomplete volumes and measured excitation power.
 \end{itemize}
-Signal loss over time (photobleaching) is recorded as an acquisition quality measure.
-It is not used as a measure of phototoxicity, which is assessed only through
+Signal loss over time is recorded as an acquisition quality measure; it does not
+by itself isolate photobleaching from motion, defocus or changes in the observed
+population. It is not used as a measure of phototoxicity, which is assessed through
 developmental timing and hatching relative to CONTROL embryos.
 
-\subsection{Provisional feasibility targets}
+\subsection{Provisional feasibility targets of the planned embryo pilot}
 We pre-specify two internal targets, not literature-derived standards: recall of at
 least 95\% on audited frames with at most 100 nuclei, and at least 90\% of verified
 links correct. Targets are judged per group, with each embryo's own result reported
@@ -210,19 +321,24 @@ Section~\ref{sec:rehearsal}.
 
 \section{Results}
 \subsection{Instrument rehearsals (non-study samples)}\label{sec:rehearsal-results}
-Table~\ref{tab:rehearsal} summarizes the rehearsals. Acquisition timing was exact
-in every run: no time point was late or missing. In the low-dose 8~h run, all 481
-volumes were recorded at 60.00~s intervals (range 59.92--60.08~s) with a stable stack
-time of 28.6~s, so the planned 60~s cadence with a 41-plane stack can be sustained for
-the full study duration.
+Table~\ref{tab:rehearsal} summarizes the rehearsals. Saved time-point counts and
+recorded ND2 timestamps matched the nominal schedules of the listed recordings.
+In the lower-setting $10\times$ CF-mode 8~h run, 481 41-plane volumes were saved
+with recorded intervals near 60.00~s (range 59.92--60.08~s). The median
+first-to-last plane-start span was 27.90~s; this is not a complete stack-cycle
+duration. These observations establish recorded cadence for that rehearsal recipe,
+not independently verified exposure timing, nuclear resolution, full-embryo coverage
+or readiness of the final $60\times$ embryo acquisition.
 
 \begin{table}[h]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{4pt}
-\caption{Instrument rehearsals on non-study worms ($10\times$ objective). Signal is the
-background-subtracted foreground mean as a fraction of the start; movement is the last
-30-min mean as a fraction of the first.}
+\caption{Instrument rehearsals on non-study worms ($10\times$ objective).
+Lower/higher refer to nominal excitation settings, not measured dose. Signal is
+the background-subtracted foreground mean as a fraction of the start; apparent
+movement is the last 30-min image-change mean as a fraction of the first. CF and
+Live Deconvolution outputs are not a matched intensity comparison.}
 \label{tab:rehearsal}
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{1.0in}
                 >{\raggedright\arraybackslash}p{1.75in}
@@ -232,37 +348,77 @@ background-subtracted foreground mean as a fraction of the start; movement is th
 \toprule
 Run & Settings & Time points & Signal remaining & Movement, end vs start \\
 \midrule
-Low dose, 1~h  & 561~nm 3\%; 41 planes; every 60~s & 61/61
+Lower, 1~h  & 561~nm 3\%; CF; 41 planes; every 60~s & 61/61
                & red 96\% at 1~h & 100\% (mask turnover) \\
-Low dose, 8~h  & 561~nm 3\%; 41 planes; every 60~s & 481/481
+Lower, 8~h  & 561~nm 3\%; CF; 41 planes; every 60~s & 481/481
                & red 93\% at 2~h, 65\% at 8~h & 105\% (mask turnover) \\
-High dose, 2~h & 488~nm 75.5\%, 561~nm 51.4\%; 1 plane; every 4~s & 1801/1801
+Higher, 2~h & 488~nm 75.5\%, 561~nm 51.4\%; Live Deconvolution; 1 plane; every 4~s & 1801/1801
                & GFP 29\%, red 62\% at 2~h & 24\% (TD motion) \\
-High dose, 4~h & as above & 3601/3601
+Higher, 4~h & as above & 3601/3601
                & GFP 10\%, red 26\% at 4~h & 4\% (TD motion) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Signal fell much faster with high-dose single-plane imaging than with low-dose
-volume imaging: GFP lost half its signal in 27--32~min, whereas the red signal in
-the low-dose runs had not halved after 8~h despite 41 planes per time point. Worm
-movement declined steeply under high-dose imaging (to 4\% of the initial value after
-4~h in a field of crowded larvae, with an adult that stopped moving within about
-1~h in the 2~h run), but not under low-dose imaging, where movement maps at 0, 4 and
-8~h were similar. Because the two conditions also differed in slide, mount, sample
-density and single-plane versus volume imaging, and no unexposed field was imaged on
-the same slide, these observations point to excitation dose as a likely cause of the
-loss of movement but do not establish it.
+Apparent fluorescence declined in the higher-setting single-plane recordings:
+the foreground GFP measure fell to half its starting value in 27--32~min,
+whereas the red foreground measure in the lower-setting recordings had not halved
+after 8~h. These are signal-retention measurements, not isolated fluorophore
+bleaching constants. TD pixel-change declined to 4\% of its initial-bin value
+by the final bin of the 4~h recording and to 24\% in the 2~h recording. However,
+the latter recording's GFP mask turnover remained at 103\% of its initial-bin
+value, illustrating that the proxies can disagree. In the lower-setting 8~h run,
+red mask turnover was 105\% of its initial-bin value at the end. Processing mode,
+slide, mounting, sample density, geometry, field occupancy and sampling differed,
+and no matched unexposed control field was followed. These observations do not
+establish a causal excitation effect, stable worm speed or organism death.
 
-In a further 15~h high-dose rehearsal (488~nm 75.5\%, 561~nm 45.9\%, one plane every
-10~s, 5401 time points, PFS off), the image lost focus progressively: TD sharpness
-fell to 50\% of its starting value by 15~min and to about 26\% by 3~h, while the
-recorded objective position stayed within 0.32~\textmu m. The sample, not the
-objective, therefore moved relative to the focal plane, consistent with thermal
-settling and drying of the unsealed mount. Fluorescence fell to background within
-about 3~h. Movement could not be assessed after the first 1--2~h because defocus
-masks it.
+In the further 15~h CF-mode rehearsal (488~nm 75.5\%, 561~nm 45.9\%, one plane
+every 10~s, 5401 saved time points), the 185-frame sampled review found that the TD
+sharpness proxy was 50\% of its first-five-frame baseline at 15~min and 21\% at
+3~h. At 3~h the sampled GFP and RFP contrast proxies were approximately 3\% and
+5\% of baseline. Across all recorded event rows, \texttt{Ti2 ZDrive} ranged from
+2454.66 to 2455.00~\textmu m (0.34~\textmu m), and PFS status remained out of
+range. The standardized per-frame position field was static; it is derived from
+the configured acquisition position and is not an independent time-varying
+encoder trace. Thus declining image quality and fluorescence are observed, but
+the data do not identify drying, specimen movement, optical/thermal drift,
+photobleaching or organism death as their cause. Apparent-motion measures become
+unreliable as detail and contrast are lost.
+
+Figures~\ref{fig:overnight-images} and~\ref{fig:overnight-qc} present selected
+images and sampled quality measures from this same 15~h recording. They document
+the loss of interpretable detail that a focus-stability pilot must address.
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\linewidth]{fig2_overnight_images.png}
+\caption{\textbf{Early image-quality deterioration in the 15~h CF-mode rehearsal.}
+Full-field single-plane TD and GFP images at 0, 15, 60 and 180~min (frames 0, 90,
+360 and 1080 of 5401), recorded at $10\times$ NA~0.45. Each channel uses fixed
+initial-frame 1st--99.8th percentile grayscale limits across time. Decreasing
+fluorescent contrast and changing TD detail are visible, but these images do not
+identify optical or specimen drift, motion, bleaching or other causes, and do not
+establish organism death. Recorded sampling, 0.5691~\textmu m per pixel; scale
+bars, 100~\textmu m.}
+\label{fig:overnight-images}
+\end{figure}
+
+\begin{figure}[!tbp]
+\centering
+\includegraphics[width=\linewidth]{fig3_overnight_qc.png}
+\caption{\textbf{Sampled fluorescence and TD sharpness proxies from the same
+15~h recording.} Panels show the first 180~min (A) and the complete 900~min span
+(B), using 185 of 5401 frames: five-minute samples plus the first five, preview
+and final frames. GFP and RFP contrast is the 99.9th percentile minus the median;
+TD sharpness is the variance of a four-neighbour discrete Laplacian divided by
+squared mean intensity. Each measure is normalized to its own mean over the first
+five frames (0--40~s). Lines connect sampled observations, not a fitted decay
+model. The two panels are views of one recording, not biological replicates;
+these image-content-dependent proxies do not isolate bleaching, establish
+viability or diagnose the cause of image deterioration.}
+\label{fig:overnight-qc}
+\end{figure}
 
 \subsection{Embryo pilot}
 \todo{No embryo data yet. Report every embryo individually (group, settings, stage depth,
@@ -272,13 +428,17 @@ fate), then per-group summaries.}
 \todo{Write after results. Interpret as consistency with the published biological
 benchmark, not as equivalence to diSPIM.}
 
-The rehearsals already constrain the pilot. The 60~s cadence with a whole-depth
-stack is achievable on this system. High excitation causes fast bleaching and is
-associated with loss of worm movement, so the pilot uses the lowest usable 561~nm
-excitation, measured in mW, and avoids the 488~nm line. Focus must be held by PFS,
-a sealed and equilibrated mount, or a Z range wide enough to absorb drift. Bleaching
-and phototoxicity are distinct: signal loss alone does not show harm, which is why
-phototoxicity is judged only from development and hatching relative to CONTROL.
+The rehearsals constrain the pilot but do not validate its final acquisition.
+The $10\times$ CF-mode recipe recorded 41-plane volumes at the nominal 60~s
+cadence; complete cycle timing, nuclear detection and full-depth coverage remain
+to be established on embryos with the final $60\times$ recipe. The uncontrolled
+signal and image-change observations motivate the lowest usable 561~nm excitation,
+measured in mW, and a dedicated mounting/focus check; they do not isolate a causal
+dose response. The mCherry embryo pilot does not require the 488~nm line. A
+validated mount, adequate Z coverage and recorded PFS state are assessed together;
+a lock or a static Z readback alone is not proof of specimen focus. Bleaching and
+phototoxicity remain distinct, and development and hatching are compared with
+contemporaneous CONTROL embryos without claiming that a small pilot proves safety.
 
 \subsection*{Limitations}
 The pilot is not powered to show equivalence or safety. Comparison with Duncan
@@ -291,9 +451,12 @@ nuclear crowding, and missing data there are not missing at random. Manual audit
 effort rises steeply with nucleus number, so late-stage frames are sampled more
 sparsely and their accuracy estimates are less certain. The rehearsals used
 free-moving worms rather than embryos, unmeasured power at the sample, and
-different slides for the low- and high-dose conditions without an unexposed control
-field; their movement measures are descriptive and are confounded by worms leaving
-the field or focal plane.
+different slides, processing modes and nominal excitation settings without a
+matched unexposed control field. Their image-change measures are descriptive and
+are confounded by bleaching, noise and worms leaving the field or focal plane.
+The 2026-11-18 raw-image review sampled selected time points rather than every
+pixel in every recording, and the 15~h sharpness curve used 185 of 5401 frames.
+Recorded ND2 timestamps are not an independently calibrated exposure clock.
 
 \begin{thebibliography}{9}
 \bibitem{duncan2019} Duncan LH, Moyle MW, Shao L, et al. Isotropic light-sheet
@@ -308,6 +471,10 @@ lineage-resolved cell identities in uncompressed \textit{C.\ elegans} embryos.
 
 \bibitem{nikon} Nikon. AX / AX R with NSPARC (product information).
 \url{https://www.microscope.healthcare.nikon.com/products/confocal-microscopes/ax/ax-ax-r-with-nsparc}
+
+\bibitem{aml18} Caenorhabditis Genetics Center. AML18, \texttt{wtfIs3}
+(\texttt{rab-3p::NLS::GFP} and \texttt{rab-3p::NLS::tagRFP}), strain record.
+\url{https://cgc.umn.edu/strain/AML18}
 
 \bibitem{sugawara2021data} Sugawara K, \c{C}evrim \c{C}, Averof M. Supplementary data
 (Fluo-N3DH-CE image and tracking data). Zenodo. 2021.
