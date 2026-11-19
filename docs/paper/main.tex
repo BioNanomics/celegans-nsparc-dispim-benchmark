@@ -190,7 +190,51 @@ Portable records and the sampling limits are retained in
 \texttt{data/reviews/2026-11-18/}; uninspected pixels or time points are not
 represented as a complete raw-data audit.
 
-\subsection{Manual validation}
+\subsection{Prospective AML18 spot-annotation case study}\label{sec:aml18-annotation}
+A separate two-dimensional feasibility case study was prepared on 2026-11-18
+using \texttt{Celegans\_01\_stack\_timing1111.nd2}. This AML18 rehearsal contains
+151 single-plane time points at approximately 4~s intervals over 10~min, with
+GFP, RFP and TD channels, $1024\times1024$ pixels and a recorded calibration of
+0.50669~\textmu m per pixel at $10\times$ NA~0.45. The saved NSPARC processing
+mode is Live Deconvolution. The source SHA-256, native elapsed timestamps,
+calibration and review design are retained in a frozen, hashed frame plan in
+\texttt{data/annotations/aml18\_1111\_v1/}.
+At kit creation the annotation table contained no observations and all 151
+frame-review records were marked not reviewed; manual reference labels,
+reviewer-agreement estimates and tracker performance results remain pending.
+
+The prepared local viewer retains native image coordinates and supplies fixed
+8-bit display previews: each channel's first-frame 1st and 99.8th percentiles
+define a linear display range used for every frame, without resizing the images.
+The previews are display transformations, not raw-intensity measurements; the
+source ND2 is unchanged. Reviewers will assign temporary spot IDs and record
+GFP centroids, using RFP and TD for context. Each target/frame decision will be
+recorded as visible, uncertain or not visible; uncertainty and non-visibility
+require a reason. A missing annotation means not reviewed, not absence. Frame
+review is recorded separately from target visibility. Pixel-centre coordinates
+use the upper-left centre as $(0,0)$, with x as column and y as row; converted
+micrometre coordinates are relative to this image origin, not stage coordinates.
+
+Zero-based frames 0--59 (60 frames) form the development block, 60--74 (15 frames)
+form a temporal buffer excluded from fitting and scored evaluation, and 75--150
+(76 frames) form the evaluation block. Frames 0, 38, 75, 112 and 150 had already
+been qualitatively previewed; ``held out'' therefore means withheld from tracker
+fitting and threshold selection, not never seen. A deterministic SHA-256 ranking
+with seed 20261118 selects five development and five evaluation frames for
+independent secondary review, without using image quality. Reviewers' original
+exports and any subsequent reconciliation will be retained separately.
+
+Development-frame agreement will inform the localization-matching tolerance and
+annotation rules, which will be locked in a separate analysis-parameter record
+before evaluation. The evaluation subset will not be used to choose thresholds
+or repair the tracker. Reporting will distinguish localization and correspondence
+errors from uncertain or non-visible intervals. All frames belong to one movie;
+they are not independent biological replicates. Temporary spot correspondence
+does not establish anatomical neuron identities, calcium activity, embryonic
+lineages or organism viability. The detailed protocol is retained in
+\texttt{docs/SPOT\_ANNOTATION\_PROTOCOL.md}.
+
+\subsection{Manual validation of the planned embryo pilot}
 Audit frames are chosen before any results are reviewed. For each embryo, the
 tracker's per-frame nucleus counts are used to select a fixed number of frames from
 each stage ($<16$, 16--49, 50--99, 100--199, $\geq 200$ nuclei) with a recorded
